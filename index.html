@@ -225,6 +225,30 @@
       </div>
       <span class="text-gray-400 text-2xl font-light">›</span>
     </button>
+    <button onclick="showView('doodle')" class="w-full bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 border-2 border-yellow-200 rounded-2xl p-6 flex items-center gap-4 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg text-left">
+      <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-400 flex items-center justify-center text-4xl flex-shrink-0">🎨</div>
+      <div class="flex-1">
+        <p class="font-black text-gray-800 text-lg">Garabato Libre</p>
+        <p class="text-gray-500 text-sm">Dibuja lo que sientes. Sin reglas</p>
+      </div>
+      <span class="text-gray-400 text-2xl font-light">›</span>
+    </button>
+    <button onclick="showView('clouds')" class="w-full bg-gradient-to-br from-sky-50 to-blue-50 border-2 border-sky-200 rounded-2xl p-6 flex items-center gap-4 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg text-left">
+      <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-sky-400 to-blue-400 flex items-center justify-center text-4xl flex-shrink-0">☁️</div>
+      <div class="flex-1">
+        <p class="font-black text-gray-800 text-lg">Nubes que Pasan</p>
+        <p class="text-gray-500 text-sm">Toca las nubes y recibe mensajes</p>
+      </div>
+      <span class="text-gray-400 text-2xl font-light">›</span>
+    </button>
+    <button onclick="showView('grounding')" class="w-full bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-2xl p-6 flex items-center gap-4 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg text-left">
+      <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-400 flex items-center justify-center text-4xl flex-shrink-0">🌍</div>
+      <div class="flex-1">
+        <p class="font-black text-gray-800 text-lg">5-4-3-2-1 Tierra</p>
+        <p class="text-gray-500 text-sm">Usa tus sentidos para volver al presente</p>
+      </div>
+      <span class="text-gray-400 text-2xl font-light">›</span>
+    </button>
   </div>
 </div>
 
@@ -275,6 +299,48 @@
       <p class="text-gray-400/60 font-black text-sm">¡Toca las burbujas!</p>
     </div>
   </div>
+</div>
+
+<!-- ===== DOODLE GAME ===== -->
+<div id="view-doodle" hidden class="min-h-screen bg-gradient-to-br from-pink-50 via-yellow-50 to-orange-50 flex flex-col select-none" style="height:100vh;">
+  <div class="p-4 flex items-center justify-between bg-white/70 backdrop-blur-sm shadow-sm flex-shrink-0">
+    <button onclick="showView('games')" class="text-gray-600 hover:text-gray-800 text-2xl font-bold">‹</button>
+    <h2 class="font-black text-gray-700 text-lg">Garabato Libre 🎨</h2>
+    <button onclick="doodleClear()" class="text-sm bg-gray-100 hover:bg-gray-200 font-bold px-3 py-1.5 rounded-full text-gray-600">Borrar</button>
+  </div>
+  <p class="text-center text-gray-500 text-sm font-semibold py-2 px-4 flex-shrink-0">Dibuja lo que sientes. No hay reglas ni errores aquí 🌈</p>
+  <div id="doodle-palette" class="flex justify-center gap-2 px-4 pb-2 flex-shrink-0"></div>
+  <div class="flex-1 px-4 pb-4 min-h-0">
+    <canvas id="doodle-canvas" class="w-full h-full rounded-2xl shadow-lg border-2 border-yellow-200 touch-none" style="cursor:crosshair;display:block;"></canvas>
+  </div>
+</div>
+
+<!-- ===== CLOUDS GAME ===== -->
+<div id="view-clouds" hidden class="min-h-screen flex flex-col select-none overflow-hidden" style="background:linear-gradient(180deg,#38bdf8 0%,#7dd3fc 40%,#bae6fd 70%,#e0f2fe 100%);height:100vh;">
+  <div class="p-4 flex items-center gap-3 bg-white/30 backdrop-blur-sm flex-shrink-0">
+    <button onclick="stopClouds(); showView('games')" class="text-sky-800 hover:text-sky-900 text-2xl font-bold">‹</button>
+    <h2 class="font-black text-sky-900 text-lg">Nubes que Pasan ☁️</h2>
+  </div>
+  <div class="flex-1 relative overflow-hidden">
+    <div class="absolute top-3 right-8 text-6xl" style="filter:drop-shadow(0 0 12px rgba(251,191,36,0.5))">☀️</div>
+    <div class="absolute top-16 left-10 text-2xl opacity-60" style="animation:float 4s ease-in-out infinite">🐦</div>
+    <div class="absolute top-24 left-28 text-xl opacity-40" style="animation:float 5s ease-in-out infinite 1s">🐦</div>
+    <div id="clouds-area" class="absolute inset-0"></div>
+    <div id="clouds-popup" hidden class="absolute inset-x-6 z-10 bg-white/95 backdrop-blur-sm rounded-2xl p-5 text-center shadow-xl border-2 border-sky-200" style="top:38%;transform:translateY(-50%)">
+      <p id="clouds-popup-text" class="text-lg font-black text-sky-700 leading-snug"></p>
+    </div>
+    <div class="absolute bottom-0 inset-x-0 flex justify-center gap-4 pb-2">
+      <span class="text-3xl">🌳</span><span class="text-4xl">🌲</span><span class="text-2xl">🌿</span><span class="text-4xl">🌲</span><span class="text-3xl">🌳</span>
+    </div>
+    <div class="absolute bottom-12 inset-x-0 text-center pointer-events-none">
+      <p class="text-sky-700/70 font-semibold text-sm">Toca una nube para un mensaje 💙</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GROUNDING GAME ===== -->
+<div id="view-grounding" hidden class="min-h-screen flex flex-col select-none">
+  <div id="grounding-content" class="flex flex-col flex-1"></div>
 </div>
 
 <!-- ===== ACHIEVEMENTS ===== -->
@@ -462,12 +528,13 @@ function logout() {
 //  NAVIGATION
 // ============================================================
 
-const ALL_VIEWS = ['login','dashboard','teacher','diary','games','breathing','bubbles','achievements'];
+const ALL_VIEWS = ['login','dashboard','teacher','diary','games','breathing','bubbles','doodle','clouds','grounding','achievements'];
 
 function showView(name) {
   // Cleanup on leave
   if (name !== 'breathing') stopBreathing();
   if (name !== 'bubbles')   stopBubbleGame();
+  if (name !== 'clouds')    stopClouds();
 
   ALL_VIEWS.forEach(v => {
     document.getElementById('view-' + v).hidden = (v !== name);
@@ -478,6 +545,9 @@ function showView(name) {
   if (name === 'achievements') renderAchievements();
   if (name === 'breathing')    initBreathing();
   if (name === 'bubbles')      initBubbleGame();
+  if (name === 'doodle')       initDoodle();
+  if (name === 'clouds')       initClouds();
+  if (name === 'grounding')    initGrounding();
   if (name === 'teacher') {
     const u = getCurrentUser();
     if (u) renderTeacherView(u);
@@ -1070,6 +1140,242 @@ function stopBubbleGame() {
 function updateBubbleScore() {
   const el = document.getElementById('bubble-score');
   if (el) el.textContent = '✨ ' + bubbleScore;
+}
+
+// ============================================================
+//  DOODLE GAME
+// ============================================================
+
+const DOODLE_COLORS = ['#6366f1','#ec4899','#14b8a6','#f59e0b','#10b981','#ef4444','#8b5cf6','#f97316'];
+let doodleColor = DOODLE_COLORS[0];
+let doodleDrawing = false;
+let doodleLastPos = null;
+let doodleCanvas = null;
+let doodleCtx = null;
+
+function initDoodle() {
+  doodleCanvas = document.getElementById('doodle-canvas');
+  doodleCtx = doodleCanvas.getContext('2d');
+  // Size canvas to its CSS size
+  doodleCanvas.width = doodleCanvas.offsetWidth;
+  doodleCanvas.height = doodleCanvas.offsetHeight;
+  doodleCtx.fillStyle = '#fefce8';
+  doodleCtx.fillRect(0, 0, doodleCanvas.width, doodleCanvas.height);
+
+  // Render palette
+  const palette = document.getElementById('doodle-palette');
+  palette.innerHTML = '';
+  DOODLE_COLORS.forEach(c => {
+    const btn = document.createElement('button');
+    btn.style.cssText = `width:32px;height:32px;border-radius:50%;background:${c};border:${c === doodleColor ? '4px solid #1e293b' : '3px solid transparent'};transform:${c === doodleColor ? 'scale(1.25)' : 'scale(1)'};`;
+    btn.onclick = () => { doodleColor = c; initDoodle(); };
+    palette.appendChild(btn);
+  });
+
+  doodleCanvas.onpointerdown = (e) => { e.preventDefault(); doodleDrawing = true; doodleLastPos = getDoodlePos(e); };
+  doodleCanvas.onpointermove = (e) => {
+    e.preventDefault();
+    if (!doodleDrawing) return;
+    const pos = getDoodlePos(e);
+    doodleCtx.beginPath();
+    doodleCtx.moveTo(doodleLastPos.x, doodleLastPos.y);
+    doodleCtx.lineTo(pos.x, pos.y);
+    doodleCtx.strokeStyle = doodleColor;
+    doodleCtx.lineWidth = 10;
+    doodleCtx.lineCap = 'round';
+    doodleCtx.lineJoin = 'round';
+    doodleCtx.stroke();
+    doodleLastPos = pos;
+  };
+  doodleCanvas.onpointerup = doodleCanvas.onpointerleave = () => { doodleDrawing = false; doodleLastPos = null; };
+}
+
+function getDoodlePos(e) {
+  const rect = doodleCanvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return {
+    x: (src.clientX - rect.left) * (doodleCanvas.width / rect.width),
+    y: (src.clientY - rect.top) * (doodleCanvas.height / rect.height),
+  };
+}
+
+function doodleClear() {
+  if (!doodleCtx) return;
+  doodleCtx.fillStyle = '#fefce8';
+  doodleCtx.fillRect(0, 0, doodleCanvas.width, doodleCanvas.height);
+}
+
+// ============================================================
+//  CLOUDS GAME
+// ============================================================
+
+const CLOUD_AFFIRMATIONS = [
+  '¡Eres capaz de superar esto! 💪',
+  'Respira... este momento pasará 🌸',
+  'Estás haciendo lo mejor que puedes ⭐',
+  'Eres más fuerte de lo que crees 🦋',
+  'Cada día aprendes algo nuevo 🌱',
+  'Tu esfuerzo cuenta y vale mucho 💛',
+  'Está bien pedir ayuda 🤝',
+  'Este es tu momento de calma ☁️',
+  'Tú puedes con esto 🌈',
+  '¡Confía en ti! Vas muy bien 🎯',
+  'Tu mente merece descanso 🧘',
+  'Eres especial y único 🌟',
+];
+
+let cloudAnimId = null;
+let cloudList = [];
+let cloudIdCounter = 0;
+let cloudsPopupTimer = null;
+
+function makeCloud(startX) {
+  cloudIdCounter++;
+  return {
+    id: cloudIdCounter,
+    y: 8 + Math.random() * 60,
+    x: startX !== undefined ? startX : -25,
+    speed: 0.012 + Math.random() * 0.012,
+    scale: 0.7 + Math.random() * 0.7,
+    msg: CLOUD_AFFIRMATIONS[Math.floor(Math.random() * CLOUD_AFFIRMATIONS.length)],
+  };
+}
+
+function initClouds() {
+  cloudList = [makeCloud(15), makeCloud(45), makeCloud(75)];
+  let last = performance.now();
+  const area = document.getElementById('clouds-area');
+
+  function tick(now) {
+    const delta = Math.min((now - last) / 16, 3);
+    last = now;
+    cloudList = cloudList.map(c => ({ ...c, x: c.x + c.speed * delta }));
+    const gone = cloudList.filter(c => c.x > 130);
+    cloudList = cloudList.filter(c => c.x <= 130);
+    gone.forEach(() => cloudList.push(makeCloud()));
+
+    area.innerHTML = '';
+    cloudList.forEach(c => {
+      const btn = document.createElement('button');
+      btn.textContent = '☁️';
+      btn.style.cssText = `position:absolute;left:${c.x}%;top:${c.y}%;transform:translate(-50%,-50%) scale(${c.scale});font-size:4.5rem;line-height:1;background:transparent;border:none;filter:drop-shadow(0 4px 12px rgba(186,230,253,0.6));cursor:pointer;`;
+      btn.onclick = () => showCloudMsg(c.msg);
+      area.appendChild(btn);
+    });
+
+    cloudAnimId = requestAnimationFrame(tick);
+  }
+  cloudAnimId = requestAnimationFrame(tick);
+}
+
+function showCloudMsg(msg) {
+  if (cloudsPopupTimer) clearTimeout(cloudsPopupTimer);
+  const popup = document.getElementById('clouds-popup');
+  document.getElementById('clouds-popup-text').textContent = msg;
+  popup.hidden = false;
+  cloudsPopupTimer = setTimeout(() => { popup.hidden = true; }, 3500);
+}
+
+function stopClouds() {
+  if (cloudAnimId) { cancelAnimationFrame(cloudAnimId); cloudAnimId = null; }
+  const area = document.getElementById('clouds-area');
+  if (area) area.innerHTML = '';
+}
+
+// ============================================================
+//  GROUNDING GAME
+// ============================================================
+
+const GROUNDING_STEPS = [
+  { count:5, sense:'VER',      emoji:'👀', instruction:'Encuentra 5 cosas que puedas VER ahora mismo',  hint:'Mira a tu alrededor con calma...', gradient:'from-blue-500 to-indigo-500',   light:'bg-blue-50',    accent:'border-blue-300',    check:'#2563eb' },
+  { count:4, sense:'TOCAR',    emoji:'✋', instruction:'Toca 4 cosas que tengas cerca',                  hint:'Tu ropa, la silla, la mesa...',    gradient:'from-emerald-500 to-teal-500', light:'bg-emerald-50', accent:'border-emerald-300', check:'#059669' },
+  { count:3, sense:'OÍR',      emoji:'👂', instruction:'Escucha 3 sonidos a tu alrededor',               hint:'Cierra los ojos y escucha...',     gradient:'from-violet-500 to-purple-500',light:'bg-violet-50',  accent:'border-violet-300',  check:'#7c3aed' },
+  { count:2, sense:'OLER',     emoji:'👃', instruction:'Identifica 2 olores que puedas sentir',          hint:'Respira profundo...',              gradient:'from-amber-500 to-orange-500', light:'bg-amber-50',   accent:'border-amber-300',   check:'#d97706' },
+  { count:1, sense:'SABOREAR', emoji:'👅', instruction:'Nota 1 sabor en tu boca',                        hint:'Presta atención a tu boca...',     gradient:'from-pink-500 to-rose-500',   light:'bg-pink-50',    accent:'border-pink-300',    check:'#e11d48' },
+];
+
+let groundingStep = 0;
+let groundingChecked = [];
+
+function initGrounding() {
+  groundingStep = 0;
+  groundingChecked = [];
+  renderGrounding();
+}
+
+function renderGrounding() {
+  const container = document.getElementById('grounding-content');
+  const s = GROUNDING_STEPS[groundingStep];
+
+  if (groundingStep >= GROUNDING_STEPS.length) {
+    container.className = 'flex flex-col flex-1 items-center justify-center p-8 text-center';
+    container.innerHTML = `
+      <div class="text-8xl mb-4">🌟</div>
+      <h2 class="font-black text-gray-800 text-2xl mb-3">¡Muy bien hecho!</h2>
+      <p class="text-gray-600 font-semibold mb-2 leading-relaxed max-w-xs">Usaste tus 5 sentidos para conectar con el presente.</p>
+      <p class="text-gray-500 text-sm mb-8 max-w-xs">Esta técnica ayuda a tu mente a salir del estrés y volver al aquí y ahora. 💚</p>
+      <button onclick="initGrounding()" class="bg-emerald-500 text-white font-black px-8 py-4 rounded-2xl text-lg shadow-lg">Repetir ejercicio 🔄</button>
+      <button onclick="showView('games')" class="mt-4 text-gray-500 font-semibold text-sm py-2">← Volver a la Zona de Calma</button>
+    `;
+    return;
+  }
+
+  const items = Array.from({ length: s.count }, (_, i) => i);
+  const dots = GROUNDING_STEPS.map((_, i) =>
+    `<div style="width:10px;height:10px;border-radius:50%;background:${i < groundingStep ? '#374151' : i === groundingStep ? '#111827' : '#d1d5db'};transform:${i === groundingStep ? 'scale(1.25)' : 'scale(1)'};"></div>`
+  ).join('');
+
+  const circles = items.map(i => {
+    const checked = groundingChecked.includes(i);
+    return `<button onclick="groundingToggle(${i})" style="width:72px;height:72px;border-radius:50%;background:${checked ? s.check : '#fff'};border:2px solid ${checked ? s.check : '#d1d5db'};font-size:1.5rem;font-weight:900;color:${checked ? '#fff' : '#d1d5db'};transform:${checked ? 'scale(1.1)' : 'scale(1)'};transition:all 0.15s;box-shadow:0 4px 6px rgba(0,0,0,0.1);">${checked ? '✓' : i + 1}</button>`;
+  }).join('');
+
+  const allChecked = groundingChecked.length === s.count;
+  const nextLabel = groundingStep < GROUNDING_STEPS.length - 1
+    ? `Siguiente: ${GROUNDING_STEPS[groundingStep + 1].emoji} ${GROUNDING_STEPS[groundingStep + 1].sense} →`
+    : '¡Terminar! 🎉';
+
+  container.className = `flex flex-col flex-1 ${s.light}`;
+  container.innerHTML = `
+    <div class="p-4 flex items-center gap-3 bg-white/60 backdrop-blur-sm">
+      <button onclick="showView('games')" class="text-gray-600 hover:text-gray-800 text-2xl font-bold">‹</button>
+      <h2 class="font-black text-gray-700 text-lg">5-4-3-2-1 Tierra 🌍</h2>
+      <div class="ml-auto flex gap-1.5">${dots}</div>
+    </div>
+    <div class="max-w-md mx-auto w-full p-5 flex flex-col flex-1">
+      <div class="bg-gradient-to-br ${s.gradient} rounded-2xl p-6 text-white text-center shadow-lg mb-5">
+        <div class="text-5xl mb-2">${s.emoji}</div>
+        <div class="text-5xl font-black mb-1 leading-none">${s.count}</div>
+        <p class="font-black text-lg opacity-95">${s.sense}</p>
+        <p class="font-semibold text-sm opacity-80 mt-1">${s.instruction}</p>
+        <p class="text-xs opacity-60 mt-1 italic">${s.hint}</p>
+      </div>
+      <p class="text-center text-gray-500 text-sm font-semibold mb-4">Toca cada círculo cuando identifiques algo</p>
+      <div class="flex flex-wrap justify-center gap-4 flex-1 items-center">${circles}</div>
+      <p class="text-center text-gray-400 font-semibold text-sm mt-4">${groundingChecked.length} de ${s.count} identificadas</p>
+      <button onclick="groundingNext()" ${allChecked ? '' : 'disabled'}
+        style="margin-top:20px;width:100%;padding:16px;border-radius:16px;font-weight:900;font-size:1.125rem;background:${allChecked ? '#1f2937' : '#e5e7eb'};color:${allChecked ? '#fff' : '#9ca3af'};cursor:${allChecked ? 'pointer' : 'not-allowed'};border:none;">
+        ${nextLabel}
+      </button>
+    </div>
+  `;
+}
+
+function groundingToggle(i) {
+  if (groundingChecked.includes(i)) {
+    groundingChecked = groundingChecked.filter(x => x !== i);
+  } else {
+    groundingChecked = [...groundingChecked, i];
+  }
+  renderGrounding();
+}
+
+function groundingNext() {
+  const s = GROUNDING_STEPS[groundingStep];
+  if (groundingChecked.length < s.count) return;
+  groundingStep++;
+  groundingChecked = [];
+  renderGrounding();
 }
 
 // ============================================================
