@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎒 Mi Mochila</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Nunito', sans-serif; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    .float-animation { animation: float 3s ease-in-out infinite; }
+    @keyframes ping { 0%{transform:translate(-50%,-50%) scale(1);opacity:1} 100%{transform:translate(-50%,-50%) scale(2.5);opacity:0} }
+    .pop-effect { animation: ping 0.5s ease-out forwards; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body class="bg-gray-100">
+
+<!-- ===== LOGIN ===== -->
+<div id="view-login" class="min-h-screen bg-gradient-to-br from-green-100 via-amber-50 to-blue-100 flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8">
+      <span class="text-8xl inline-block float-animation">🎒</span>
+      <h1 class="text-4xl font-black text-green-800 mt-3">Mi Mochila</h1>
+      <p class="text-green-600 font-semibold mt-1">Tu espacio de bienestar</p>
+    </div>
+    <div class="bg-white rounded-3xl shadow-xl p-8">
+      <h2 class="text-xl font-bold text-gray-700 mb-6 text-center">¡Bienvenido de vuelta!</h2>
+      <form id="login-form" class="space-y-4" onsubmit="handleLoginSubmit(event)">
+        <div>
+          <label class="block text-sm font-semibold text-gray-600 mb-1">Correo</label>
+          <input type="email" id="login-email" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-green-400 transition-colors font-medium" placeholder="tu@correo.com" required>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-600 mb-1">Contraseña</label>
+          <input type="password" id="login-password" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-green-400 transition-colors font-medium" placeholder="••••••••" required>
+        </div>
+        <div id="login-error" hidden class="text-red-500 text-sm font-semibold text-center bg-red-50 py-2 rounded-xl">Email o contraseña incorrectos</div>
+        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl transition-colors text-lg">Entrar 🚀</button>
+      </form>
+      <div class="mt-6">
+        <p class="text-xs text-gray-400 text-center mb-3 font-bold tracking-wider">CUENTAS DE DEMO</p>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="loginAs('alumno@mochila.mx','alumno123')" class="flex items-center gap-2 bg-gray-50 hover:bg-green-50 border-2 border-gray-200 hover:border-green-300 rounded-xl px-3 py-2 text-sm font-bold transition-all">
+            <span class="text-xl">🎒</span><span class="text-gray-700">Alumno</span>
+          </button>
+          <button onclick="loginAs('maestra@mochila.mx','maestra123')" class="flex items-center gap-2 bg-gray-50 hover:bg-green-50 border-2 border-gray-200 hover:border-green-300 rounded-xl px-3 py-2 text-sm font-bold transition-all">
+            <span class="text-xl">👩‍🏫</span><span class="text-gray-700">Maestra</span>
+          </button>
+          <button onclick="loginAs('papa@mochila.mx','papa123')" class="flex items-center gap-2 bg-gray-50 hover:bg-green-50 border-2 border-gray-200 hover:border-green-300 rounded-xl px-3 py-2 text-sm font-bold transition-all">
+            <span class="text-xl">👨‍👦</span><span class="text-gray-700">Papá</span>
+          </button>
+          <button onclick="loginAs('admin@mochila.mx','admin123')" class="flex items-center gap-2 bg-gray-50 hover:bg-green-50 border-2 border-gray-200 hover:border-green-300 rounded-xl px-3 py-2 text-sm font-bold transition-all">
+            <span class="text-xl">🔑</span><span class="text-gray-700">Admin</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD (alumno) ===== -->
+<div id="view-dashboard" hidden class="min-h-screen bg-gradient-to-br from-green-50 via-amber-50 to-blue-50">
+  <div class="flex items-center justify-between p-4 bg-white shadow-sm sticky top-0 z-10">
+    <div class="flex items-center gap-3">
+      <span id="dash-avatar" class="text-3xl">🎒</span>
+      <div>
+        <p id="dash-name" class="font-black text-gray-800 leading-none"></p>
+        <p id="dash-grade" class="text-xs text-gray-500"></p>
+      </div>
+    </div>
+    <button onclick="logout()" class="text-sm text-gray-400 hover:text-gray-600 font-semibold px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors">Salir</button>
+  </div>
+  <div class="max-w-md mx-auto p-5">
+    <div id="dash-streak-box" hidden class="bg-amber-100 border-2 border-amber-200 rounded-2xl p-3 mb-5 flex items-center gap-3">
+      <span class="text-3xl">🔥</span>
+      <div>
+        <p id="dash-streak-text" class="font-black text-amber-800"></p>
+        <p class="text-xs text-amber-600">¡Sigue escribiendo en tu diario!</p>
+      </div>
+    </div>
+    <div class="text-center py-4">
+      <span class="text-9xl inline-block float-animation">🎒</span>
+      <h2 class="text-2xl font-black text-green-800 mt-2">Tu Mochila</h2>
+      <p class="text-gray-500 text-sm">¿Qué bolsillo abres hoy?</p>
+    </div>
+    <div class="space-y-3 mt-2">
+      <button onclick="showView('diary')" class="w-full bg-purple-50 border-2 border-purple-200 rounded-2xl p-4 flex items-center gap-4 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-sm text-left">
+        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-3xl shadow-md flex-shrink-0">📔</div>
+        <div class="flex-1"><p class="font-black text-gray-800 text-lg">Mi Diario</p><p class="text-gray-500 text-sm">Escribe cómo te sientes hoy</p></div>
+        <span class="text-gray-400 text-2xl font-light">›</span>
+      </button>
+      <button onclick="showView('games')" class="w-full bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 flex items-center gap-4 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-sm text-left">
+        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center text-3xl shadow-md flex-shrink-0">🫧</div>
+        <div class="flex-1"><p class="font-black text-gray-800 text-lg">Zona de Calma</p><p class="text-gray-500 text-sm">Juegos para respirar y relajarte</p></div>
+        <span class="text-gray-400 text-2xl font-light">›</span>
+      </button>
+      <button onclick="showView('achievements')" class="w-full bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-4 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-sm text-left">
+        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center text-3xl shadow-md flex-shrink-0">⭐</div>
+        <div class="flex-1"><p class="font-black text-gray-800 text-lg">Mis Logros</p><p class="text-gray-500 text-sm">Tus stickers y medallas</p></div>
+        <span class="text-gray-400 text-2xl font-light">›</span>
+      </button>
+    </div>
+    <div class="mt-6 bg-white border-2 border-green-100 rounded-2xl p-4 text-center">
+      <p class="text-2xl mb-2">💚</p>
+      <p id="dash-quote" class="text-green-700 font-semibold text-sm italic"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TEACHER VIEW ===== -->
+<div id="view-teacher" hidden class="min-h-screen bg-green-50">
+  <div class="bg-white shadow-sm p-4 flex items-center justify-between sticky top-0 z-10">
+    <div class="flex items-center gap-3">
+      <span id="teacher-avatar" class="text-3xl">👩‍🏫</span>
+      <div>
+        <p id="teacher-name" class="font-black text-gray-800 leading-none"></p>
+        <p id="teacher-role" class="text-xs text-gray-500"></p>
+      </div>
+    </div>
+    <button onclick="logout()" class="text-sm text-gray-400 hover:text-gray-600 font-semibold px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors">Salir</button>
+  </div>
+  <div class="max-w-2xl mx-auto p-5">
+    <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 mb-5 flex items-start gap-3">
+      <span class="text-xl">🔒</span>
+      <p class="text-blue-700 text-sm font-semibold">
+        <strong>Privacidad:</strong> Solo puedes ver el estado de ánimo de cada alumno. El contenido del diario es completamente privado.
+      </p>
+    </div>
+    <h2 id="teacher-students-title" class="text-xl font-black text-gray-800 mb-4">👥 Mis Alumnos</h2>
+    <div id="teacher-students-list" class="grid gap-3 mb-6"></div>
+    <div id="teacher-summary-panel" hidden class="bg-white rounded-2xl p-5 shadow-sm">
+      <div class="flex items-center gap-3 mb-4">
+        <span id="summary-avatar" class="text-3xl">🎒</span>
+        <div>
+          <h3 id="summary-name" class="font-black text-gray-800 text-lg"></h3>
+          <p class="text-sm text-gray-500">Historial emocional reciente</p>
+        </div>
+        <div id="summary-top-mood" class="ml-auto text-center hidden">
+          <p id="summary-top-emoji" class="text-2xl"></p>
+          <p class="text-xs text-gray-500">más frecuente</p>
+        </div>
+      </div>
+      <div id="summary-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DIARY ===== -->
+<div id="view-diary" hidden class="min-h-screen bg-purple-50">
+  <div class="bg-white shadow-sm p-4 flex items-center gap-3 sticky top-0 z-10">
+    <button onclick="showView('dashboard')" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">‹</button>
+    <h1 class="text-xl font-black text-gray-800">📔 Mi Diario</h1>
+    <div class="ml-auto flex gap-1">
+      <button id="tab-write" onclick="diarySetTab('write')" class="px-3 py-1 rounded-full text-sm font-bold transition-all bg-purple-600 text-white">Escribir</button>
+      <button id="tab-history" onclick="diarySetTab('history')" class="px-3 py-1 rounded-full text-sm font-bold transition-all text-gray-400 hover:text-gray-600">Historial</button>
+    </div>
+  </div>
+
+  <!-- Write tab -->
+  <div id="diary-write" class="max-w-md mx-auto p-4 space-y-4">
+    <div id="diary-saved-msg" hidden class="bg-green-100 border-2 border-green-300 rounded-2xl p-3 text-center text-green-700 font-bold">✅ ¡Entrada guardada!</div>
+
+    <!-- Mood selector -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm">
+      <p class="font-bold text-gray-700 mb-3">¿Cómo te sientes hoy?</p>
+      <div class="grid grid-cols-3 gap-2" id="mood-grid"></div>
+    </div>
+
+    <!-- Tip -->
+    <div id="diary-tip" hidden class="bg-white border-l-4 border-purple-400 rounded-2xl p-4 shadow-sm">
+      <p class="text-xs font-black text-purple-500 mb-1">💡 CONSEJO PARA TI</p>
+      <p id="diary-tip-text" class="text-gray-700 font-semibold"></p>
+    </div>
+
+    <!-- Color picker -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm">
+      <p class="font-bold text-gray-700 mb-3">Color de tu página</p>
+      <div class="flex gap-2" id="color-picker"></div>
+    </div>
+
+    <!-- Text area -->
+    <div id="diary-page" class="rounded-2xl p-4 shadow-sm">
+      <p id="diary-prompt" class="font-bold text-gray-600 mb-2 text-sm"></p>
+      <textarea id="diary-text" rows="6" placeholder="Escribe libremente aquí..."
+        class="w-full bg-white/70 backdrop-blur rounded-xl p-3 text-gray-700 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-purple-300 font-medium"></textarea>
+      <div class="flex items-center justify-between mt-2">
+        <span id="diary-char-count" class="text-xs text-gray-500">0 caracteres</span>
+        <button onclick="saveDiaryEntry()" id="diary-save-btn" disabled
+          class="bg-purple-600 hover:bg-purple-700 text-white font-black px-6 py-2 rounded-xl transition-all disabled:opacity-40 active:scale-95">
+          Guardar ✨
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History tab -->
+  <div id="diary-history" hidden class="max-w-md mx-auto p-4 space-y-3">
+    <div id="diary-entries-list"></div>
+  </div>
+</div>
+
+<!-- ===== GAMES SELECTION ===== -->
+<div id="view-games" hidden class="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+  <div class="bg-white shadow-sm p-4 flex items-center gap-3 sticky top-0 z-10">
+    <button onclick="showView('dashboard')" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">‹</button>
+    <h1 class="text-xl font-black text-gray-800">🫧 Zona de Calma</h1>
+  </div>
+  <div class="max-w-md mx-auto p-5 space-y-4">
+    <p class="text-gray-500 font-semibold text-center mt-2">Elige una actividad para relajarte</p>
+    <button onclick="showView('breathing')" class="w-full bg-indigo-950 rounded-2xl p-6 flex items-center gap-4 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg text-left">
+      <div class="w-16 h-16 rounded-xl bg-blue-500/20 border-2 border-blue-400 flex items-center justify-center text-4xl flex-shrink-0">🌬️</div>
+      <div class="flex-1">
+        <p class="font-black text-white text-lg">Respiración 4-7-8</p>
+        <p class="text-white/60 text-sm">Técnica de relajación profunda</p>
+      </div>
+      <span class="text-white/40 text-2xl font-light">›</span>
+    </button>
+    <button onclick="showView('bubbles')" class="w-full bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 border-2 border-purple-200 rounded-2xl p-6 flex items-center gap-4 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg text-left">
+      <div class="w-16 h-16 rounded-xl bg-purple-600 flex items-center justify-center text-4xl flex-shrink-0">🫧</div>
+      <div class="flex-1">
+        <p class="font-black text-gray-800 text-lg">Revienta Burbujas</p>
+        <p class="text-gray-500 text-sm">Desahógate de forma divertida</p>
+      </div>
+      <span class="text-gray-400 text-2xl font-light">›</span>
+    </button>
+  </div>
+</div>
+
+<!-- ===== BREATHING GAME ===== -->
+<div id="view-breathing" hidden class="min-h-screen bg-gradient-to-br from-slate-900 to-indigo-950 flex flex-col items-center justify-between p-6">
+  <div class="w-full flex items-center justify-between">
+    <button onclick="stopBreathing(); showView('games')" class="text-white/50 hover:text-white text-3xl font-bold transition-colors">‹</button>
+    <h2 class="text-white font-black text-xl">Respiración 4-7-8</h2>
+    <div id="breath-cycles" class="bg-white/10 rounded-full px-3 py-1 text-white text-sm font-bold">0 ciclos</div>
+  </div>
+
+  <div class="flex flex-col items-center gap-8">
+    <div class="relative flex items-center justify-center">
+      <div id="breath-glow" class="absolute rounded-full transition-all duration-1000" style="width:260px;height:260px;"></div>
+      <div id="breath-circle" class="relative rounded-full flex items-center justify-center transition-all duration-1000"
+        style="width:200px;height:200px;border:4px solid #60A5FA;background-color:#60A5FA20;box-shadow:0 0 40px #60A5FA60;">
+        <div class="text-center">
+          <p id="breath-count" class="text-white font-black text-6xl leading-none">4</p>
+          <p id="breath-label" class="text-white/90 font-bold text-xl mt-1">Inhala</p>
+        </div>
+      </div>
+    </div>
+    <p id="breath-instruction" class="text-white/70 font-semibold text-center">Respira profundo por la nariz</p>
+  </div>
+
+  <div class="flex flex-col items-center gap-4 w-full max-w-xs">
+    <button id="breath-start-btn" onclick="startBreathing()"
+      class="w-full bg-white text-slate-900 font-black py-4 rounded-2xl text-lg hover:scale-105 active:scale-95 transition-transform shadow-2xl">
+      Comenzar 🌬️
+    </button>
+    <button id="breath-stop-btn" hidden onclick="stopBreathing()"
+      class="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-2xl transition-colors">
+      Detener
+    </button>
+    <p class="text-white/40 text-xs text-center">Inhala 4 s → Mantén 7 s → Exhala 8 s — Repite 3-4 veces</p>
+  </div>
+</div>
+
+<!-- ===== BUBBLES GAME ===== -->
+<div id="view-bubbles" hidden class="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 flex flex-col select-none">
+  <div class="p-4 flex items-center justify-between bg-white/60 backdrop-blur-sm">
+    <button onclick="stopBubbleGame(); showView('games')" class="text-gray-600 hover:text-gray-800 text-2xl font-bold">‹</button>
+    <h2 class="font-black text-gray-700 text-lg">Revienta Burbujas 🫧</h2>
+    <div id="bubble-score" class="bg-purple-600 text-white font-black px-4 py-1 rounded-full text-sm">✨ 0</div>
+  </div>
+  <div id="bubble-area" class="flex-1 relative overflow-hidden">
+    <div class="absolute bottom-6 inset-x-0 text-center pointer-events-none">
+      <p class="text-gray-400/60 font-black text-sm">¡Toca las burbujas!</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ACHIEVEMENTS ===== -->
+<div id="view-achievements" hidden class="min-h-screen bg-amber-50">
+  <div class="bg-white shadow-sm p-4 flex items-center gap-3 sticky top-0">
+    <button onclick="showView('dashboard')" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">‹</button>
+    <h1 class="text-xl font-black text-gray-800">⭐ Mis Logros</h1>
+  </div>
+  <div class="max-w-md mx-auto p-6">
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-6">
+      <div class="flex items-center gap-4">
+        <span class="text-5xl">🏆</span>
+        <div class="flex-1">
+          <p class="font-black text-2xl text-gray-800">
+            <span id="ach-unlocked-count">0</span>
+            <span class="text-gray-400 text-lg font-bold"> / 6</span>
+          </p>
+          <p class="text-gray-500 text-sm">logros desbloqueados</p>
+          <div class="mt-2 bg-gray-200 rounded-full h-2">
+            <div id="ach-progress-bar" class="bg-gradient-to-r from-amber-400 to-orange-400 h-2 rounded-full transition-all" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="text-right">
+          <p id="ach-streak" class="font-black text-xl text-amber-500">🔥 0</p>
+          <p class="text-gray-400 text-xs">días seguidos</p>
+        </div>
+      </div>
+    </div>
+    <div id="ach-unlocked-section"></div>
+    <div id="ach-locked-section"></div>
+    <div id="ach-empty" hidden class="text-center py-10">
+      <span class="text-6xl">🌱</span>
+      <p class="text-gray-500 font-bold mt-4">¡Empieza a usar tu mochila para ganar logros!</p>
+      <p class="text-gray-400 text-sm mt-1">Escribe en el diario o juega en la Zona de Calma.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  DATA & CONSTANTS
+// ============================================================
+
+const DEMO_USERS = [
+  { id: '1', name: 'Maestra López', email: 'maestra@mochila.mx', password: 'maestra123', role: 'maestro', avatar: '👩‍🏫', grade: 'Docente', achievements: [], streak: 0 },
+  { id: '2', name: 'Luis García',   email: 'alumno@mochila.mx',  password: 'alumno123',  role: 'alumno',  avatar: '🎒',   grade: '3° A',   achievements: [], streak: 0 },
+  { id: '3', name: 'Papá García',   email: 'papa@mochila.mx',    password: 'papa123',    role: 'alumno',  avatar: '👨‍👦',  grade: 'Padre',  achievements: [], streak: 0 },
+  { id: '4', name: 'Administrador', email: 'admin@mochila.mx',   password: 'admin123',   role: 'maestro', avatar: '🔑',   grade: 'Admin',  achievements: [], streak: 0 },
+];
+
+const TIPS = {
+  feliz:    '¡Genial! Comparte tu alegría con alguien especial o escríbela aquí para recordarla.',
+  triste:   'Está bien sentirse triste. Habla con alguien de confianza o escucha tu música favorita.',
+  enojado:  'Respira profundo. Cuando sientas enojo, toma distancia y cuenta hasta 10 antes de reaccionar.',
+  ansioso:  'Prueba la respiración 4-7-8 en la Zona de Calma. Te ayudará a calmarte en minutos.',
+  cansado:  'Tu cuerpo necesita descanso. Tómate un break y no te exijas demasiado hoy.',
+  nervioso: 'Es normal sentirse nervioso/a. Recuerda: estás preparado/a y puedes lograrlo.',
+};
+
+const MOODS = [
+  { key: 'feliz',    label: 'Feliz',    emoji: '😊', bg: 'bg-yellow-100', border: 'border-yellow-300', sel: 'bg-yellow-300 border-yellow-400' },
+  { key: 'triste',   label: 'Triste',   emoji: '😢', bg: 'bg-blue-100',   border: 'border-blue-300',   sel: 'bg-blue-300 border-blue-400'   },
+  { key: 'enojado',  label: 'Enojado',  emoji: '😠', bg: 'bg-red-100',    border: 'border-red-300',    sel: 'bg-red-300 border-red-400'     },
+  { key: 'ansioso',  label: 'Ansioso',  emoji: '😰', bg: 'bg-orange-100', border: 'border-orange-300', sel: 'bg-orange-300 border-orange-400'},
+  { key: 'cansado',  label: 'Cansado',  emoji: '😴', bg: 'bg-gray-100',   border: 'border-gray-300',   sel: 'bg-gray-300 border-gray-400'   },
+  { key: 'nervioso', label: 'Nervioso', emoji: '😬', bg: 'bg-purple-100', border: 'border-purple-300', sel: 'bg-purple-300 border-purple-400'},
+];
+
+const MOOD_EMOJIS  = Object.fromEntries(MOODS.map(m => [m.key, m.emoji]));
+const MOOD_COLORS  = { feliz:'#FDE68A', triste:'#BFDBFE', enojado:'#FCA5A5', ansioso:'#FED7AA', cansado:'#E5E7EB', nervioso:'#DDD6FE' };
+const PAGE_COLORS  = ['#FDE68A','#BFDBFE','#BBF7D0','#FCA5A5','#DDD6FE','#FED7AA'];
+const PROMPTS      = [
+  '¿Qué pasó hoy? ¿Cómo te sentiste?',
+  '¿Qué fue lo mejor de tu día?',
+  '¿Algo te preocupó hoy? ¿Cómo lo manejaste?',
+  '¿A quién le agradeces algo hoy?',
+  '¿Qué aprendiste de ti mismo hoy?',
+];
+const QUOTES = [
+  'Cuidar cómo te sientes es la tarea más importante.',
+  'Tus emociones son válidas. Escucharlas te hace más fuerte.',
+  'Un paso a la vez. Hoy también puedes lograrlo.',
+  'Está bien pedir ayuda. Todos la necesitamos a veces.',
+];
+const ALL_ACHIEVEMENTS = [
+  { id: 'primer_entrada',    label: '¡Primera entrada!',  desc: 'Escribiste en tu diario por primera vez',   icon: '📝', bg: 'bg-yellow-100', border: 'border-yellow-300' },
+  { id: 'semana_constante',  label: 'Semana constante',   desc: 'Escribiste 7 días seguidos',                 icon: '🔥', bg: 'bg-orange-100', border: 'border-orange-300' },
+  { id: 'experto_emocional', label: 'Experto Emocional',  desc: 'Registraste 5 emociones diferentes',        icon: '🌈', bg: 'bg-pink-100',   border: 'border-pink-300'   },
+  { id: 'escritor',          label: 'Gran Escritor',      desc: 'Escribiste 30 entradas en tu diario',       icon: '✍️', bg: 'bg-green-100',  border: 'border-green-300'  },
+  { id: 'zen',               label: 'Zen Total',          desc: 'Practicaste respiración 5 veces',            icon: '🧘', bg: 'bg-blue-100',   border: 'border-blue-300'   },
+  { id: 'explorador',        label: 'Explorador',         desc: 'Visitaste todos los bolsillos de tu mochila',icon: '🗺️', bg: 'bg-purple-100', border: 'border-purple-300' },
+];
+
+// ============================================================
+//  STORAGE HELPERS
+// ============================================================
+
+function getUsers() {
+  const saved = localStorage.getItem('mochila_users');
+  if (saved) return JSON.parse(saved);
+  localStorage.setItem('mochila_users', JSON.stringify(DEMO_USERS));
+  return DEMO_USERS;
+}
+
+function saveUsers(users) {
+  localStorage.setItem('mochila_users', JSON.stringify(users));
+}
+
+function getCurrentUser() {
+  const id = localStorage.getItem('mochila_current_user');
+  if (!id) return null;
+  return getUsers().find(u => u.id === id) || null;
+}
+
+function setCurrentUser(user) {
+  if (user) localStorage.setItem('mochila_current_user', user.id);
+  else localStorage.removeItem('mochila_current_user');
+}
+
+function getDiaryEntries(userId) {
+  const raw = localStorage.getItem('mochila_diary_' + userId);
+  return raw ? JSON.parse(raw) : [];
+}
+
+function saveDiaryEntries(userId, entries) {
+  localStorage.setItem('mochila_diary_' + userId, JSON.stringify(entries));
+}
+
+function getUserMeta(userId) {
+  const raw = localStorage.getItem('mochila_meta_' + userId);
+  return raw ? JSON.parse(raw) : { streak: 0, achievements: [], breathCount: 0, visitedAll: false };
+}
+
+function saveUserMeta(userId, meta) {
+  localStorage.setItem('mochila_meta_' + userId, JSON.stringify(meta));
+}
+
+// ============================================================
+//  AUTH
+// ============================================================
+
+function handleLoginSubmit(e) {
+  e.preventDefault();
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  doLogin(email, password);
+}
+
+function loginAs(email, password) {
+  document.getElementById('login-email').value    = email;
+  document.getElementById('login-password').value = password;
+  doLogin(email, password);
+}
+
+function doLogin(email, password) {
+  const users = getUsers();
+  const user  = users.find(u => u.email === email && u.password === password);
+  document.getElementById('login-error').hidden = true;
+  if (!user) {
+    document.getElementById('login-error').hidden = false;
+    return;
+  }
+  setCurrentUser(user);
+  afterLogin(user);
+}
+
+function afterLogin(user) {
+  if (user.role === 'maestro') {
+    renderTeacherView(user);
+    showView('teacher');
+  } else {
+    renderDashboard(user);
+    showView('dashboard');
+  }
+}
+
+function logout() {
+  stopBreathing();
+  stopBubbleGame();
+  setCurrentUser(null);
+  showView('login');
+}
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+
+const ALL_VIEWS = ['login','dashboard','teacher','diary','games','breathing','bubbles','achievements'];
+
+function showView(name) {
+  // Cleanup on leave
+  if (name !== 'breathing') stopBreathing();
+  if (name !== 'bubbles')   stopBubbleGame();
+
+  ALL_VIEWS.forEach(v => {
+    document.getElementById('view-' + v).hidden = (v !== name);
+  });
+
+  // Init on enter
+  if (name === 'diary')        initDiary();
+  if (name === 'achievements') renderAchievements();
+  if (name === 'breathing')    initBreathing();
+  if (name === 'bubbles')      initBubbleGame();
+  if (name === 'teacher') {
+    const u = getCurrentUser();
+    if (u) renderTeacherView(u);
+  }
+  if (name === 'dashboard') {
+    const u = getCurrentUser();
+    if (u) renderDashboard(u);
+    // Track visited all sections
+    trackExplorador();
+  }
+
+  // Scroll to top
+  window.scrollTo(0, 0);
+}
+
+// ============================================================
+//  DASHBOARD
+// ============================================================
+
+function renderDashboard(user) {
+  const meta = getUserMeta(user.id);
+  document.getElementById('dash-avatar').textContent = user.avatar || '🎒';
+  document.getElementById('dash-name').textContent   = '¡Hola, ' + user.name.split(' ')[0] + '!';
+  document.getElementById('dash-grade').textContent  = user.grade || '';
+
+  const streakBox = document.getElementById('dash-streak-box');
+  if (meta.streak > 0) {
+    streakBox.hidden = false;
+    document.getElementById('dash-streak-text').textContent = meta.streak + ' días seguidos';
+  } else {
+    streakBox.hidden = true;
+  }
+  document.getElementById('dash-quote').textContent = '"' + QUOTES[new Date().getDay() % QUOTES.length] + '"';
+}
+
+// ============================================================
+//  TEACHER VIEW
+// ============================================================
+
+function renderTeacherView(user) {
+  document.getElementById('teacher-avatar').textContent = user.avatar || '👩‍🏫';
+  document.getElementById('teacher-name').textContent   = user.name;
+  document.getElementById('teacher-role').textContent   = user.role;
+
+  // Get all alumno users
+  const students = getUsers().filter(u => u.role === 'alumno');
+  document.getElementById('teacher-students-title').textContent = '👥 Mis Alumnos (' + students.length + ')';
+
+  const list = document.getElementById('teacher-students-list');
+  list.innerHTML = '';
+
+  if (students.length === 0) {
+    list.innerHTML = '<div class="text-center py-12 text-gray-400"><span class="text-5xl">📋</span><p class="mt-3 font-semibold">No hay alumnos registrados</p></div>';
+    return;
+  }
+
+  students.forEach(s => {
+    const meta    = getUserMeta(s.id);
+    const entries = getDiaryEntries(s.id);
+    const btn     = document.createElement('button');
+    btn.className = 'bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-all text-left border-2 border-transparent w-full';
+    btn.innerHTML = `
+      <span class="text-3xl">${s.avatar || '🎒'}</span>
+      <div class="flex-1">
+        <p class="font-black text-gray-800">${s.name}</p>
+        <p class="text-sm text-gray-500">${s.grade} &bull; 🔥 ${meta.streak} días &bull; ⭐ ${(meta.achievements||[]).length} logros</p>
+      </div>
+      <span class="text-gray-400 text-xl">›</span>`;
+    btn.onclick = () => showStudentSummary(s, entries, btn);
+    list.appendChild(btn);
+  });
+}
+
+function showStudentSummary(student, entries, activeBtn) {
+  // Highlight selected
+  document.querySelectorAll('#teacher-students-list button').forEach(b => {
+    b.classList.remove('border-green-400','bg-green-50');
+    b.classList.add('border-transparent');
+  });
+  activeBtn.classList.remove('border-transparent');
+  activeBtn.classList.add('border-green-400','bg-green-50');
+
+  document.getElementById('summary-avatar').textContent = student.avatar || '🎒';
+  document.getElementById('summary-name').textContent   = student.name;
+
+  const panel = document.getElementById('teacher-summary-panel');
+  panel.hidden = false;
+
+  const moodCounts = entries.reduce((acc, e) => { acc[e.mood] = (acc[e.mood] || 0) + 1; return acc; }, {});
+  const sorted     = Object.entries(moodCounts).sort((a, b) => b[1] - a[1]);
+
+  const topMoodEl    = document.getElementById('summary-top-mood');
+  const topEmojiEl   = document.getElementById('summary-top-emoji');
+  if (sorted.length > 0) {
+    topMoodEl.classList.remove('hidden');
+    topEmojiEl.textContent = MOOD_EMOJIS[sorted[0][0]] || '😶';
+  } else {
+    topMoodEl.classList.add('hidden');
+  }
+
+  const content = document.getElementById('summary-content');
+  if (entries.length === 0) {
+    content.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">Sin registros todavía.</p>';
+    return;
+  }
+
+  let html = '';
+  if (sorted.length > 0) {
+    html += '<div class="flex flex-wrap gap-2 mb-4">';
+    sorted.forEach(([mood, count]) => {
+      html += `<div class="flex items-center gap-1 px-3 py-1 rounded-full text-sm font-bold" style="background-color:${MOOD_COLORS[mood]||'#E5E7EB'}">
+        <span>${MOOD_EMOJIS[mood]||'😶'}</span><span class="text-gray-700">${count}x</span></div>`;
+    });
+    html += '</div>';
+  }
+
+  html += '<p class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Últimas entradas</p>';
+  html += '<div class="flex flex-wrap gap-2">';
+  entries.slice(0, 15).forEach(e => {
+    const d = new Date(e.date).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+    html += `<div class="flex flex-col items-center px-2 py-2 rounded-xl text-center min-w-[52px]" style="background-color:${MOOD_COLORS[e.mood]||'#E5E7EB'}">
+      <span class="text-xl">${MOOD_EMOJIS[e.mood]||'😶'}</span>
+      <span class="text-xs text-gray-600 mt-1 leading-none">${d}</span></div>`;
+  });
+  html += '</div>';
+  content.innerHTML = html;
+}
+
+// ============================================================
+//  DIARY
+// ============================================================
+
+let selectedMood  = null;
+let selectedColor = PAGE_COLORS[0];
+
+function initDiary() {
+  selectedMood  = null;
+  selectedColor = PAGE_COLORS[0];
+
+  // Render mood grid
+  const grid = document.getElementById('mood-grid');
+  grid.innerHTML = '';
+  MOODS.forEach(m => {
+    const btn = document.createElement('button');
+    btn.id        = 'mood-btn-' + m.key;
+    btn.className = `flex flex-col items-center p-3 rounded-xl border-2 transition-all ${m.bg} ${m.border} hover:scale-105`;
+    btn.innerHTML = `<span class="text-3xl">${m.emoji}</span><span class="text-xs font-bold mt-1 text-gray-700">${m.label}</span>`;
+    btn.onclick   = () => selectMood(m.key);
+    grid.appendChild(btn);
+  });
+
+  // Render color picker
+  const picker = document.getElementById('color-picker');
+  picker.innerHTML = '';
+  PAGE_COLORS.forEach(c => {
+    const btn = document.createElement('button');
+    btn.id        = 'color-' + c.replace('#','');
+    btn.className = `w-9 h-9 rounded-full transition-all ${c === selectedColor ? 'ring-4 ring-gray-500 scale-125' : 'hover:scale-110'}`;
+    btn.style.backgroundColor = c;
+    btn.onclick = () => selectColor(c);
+    picker.appendChild(btn);
+  });
+
+  document.getElementById('diary-page').style.backgroundColor = selectedColor;
+  document.getElementById('diary-prompt').textContent = '💬 ' + PROMPTS[new Date().getDay() % PROMPTS.length];
+
+  const textarea = document.getElementById('diary-text');
+  textarea.value = '';
+  textarea.oninput = updateDiarySaveBtn;
+  document.getElementById('diary-char-count').textContent = '0 caracteres';
+  document.getElementById('diary-tip').hidden  = true;
+  document.getElementById('diary-saved-msg').hidden = true;
+  updateDiarySaveBtn();
+
+  diarySetTab('write');
+}
+
+function selectMood(key) {
+  selectedMood = key;
+  MOODS.forEach(m => {
+    const btn = document.getElementById('mood-btn-' + m.key);
+    if (!btn) return;
+    btn.className = `flex flex-col items-center p-3 rounded-xl border-2 transition-all ${key === m.key ? m.sel + ' shadow-md scale-105' : m.bg + ' ' + m.border + ' hover:scale-105'}`;
+  });
+  // Show tip
+  const tipEl = document.getElementById('diary-tip');
+  if (TIPS[key]) {
+    document.getElementById('diary-tip-text').textContent = TIPS[key];
+    tipEl.hidden = false;
+  } else {
+    tipEl.hidden = true;
+  }
+  updateDiarySaveBtn();
+}
+
+function selectColor(c) {
+  selectedColor = c;
+  PAGE_COLORS.forEach(pc => {
+    const btn = document.getElementById('color-' + pc.replace('#',''));
+    if (!btn) return;
+    btn.className = `w-9 h-9 rounded-full transition-all ${pc === c ? 'ring-4 ring-gray-500 scale-125' : 'hover:scale-110'}`;
+  });
+  document.getElementById('diary-page').style.backgroundColor = c;
+}
+
+function updateDiarySaveBtn() {
+  const text = document.getElementById('diary-text').value;
+  document.getElementById('diary-char-count').textContent = text.length + ' caracteres';
+  document.getElementById('diary-save-btn').disabled = !selectedMood || !text.trim();
+}
+
+function saveDiaryEntry() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const text = document.getElementById('diary-text').value.trim();
+  if (!selectedMood || !text) return;
+
+  const entries = getDiaryEntries(user.id);
+  entries.unshift({ id: Date.now().toString(), mood: selectedMood, text, color: selectedColor, date: new Date().toISOString() });
+  saveDiaryEntries(user.id, entries);
+
+  // Update meta / achievements
+  const meta = getUserMeta(user.id);
+  meta.achievements = meta.achievements || [];
+
+  if (!meta.achievements.includes('primer_entrada'))
+    meta.achievements.push('primer_entrada');
+
+  if (entries.length >= 30 && !meta.achievements.includes('escritor'))
+    meta.achievements.push('escritor');
+
+  const uniqueMoods = [...new Set(entries.map(e => e.mood))];
+  if (uniqueMoods.length >= 5 && !meta.achievements.includes('experto_emocional'))
+    meta.achievements.push('experto_emocional');
+
+  // Streak: check if wrote yesterday too
+  const today = new Date().toDateString();
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  if (entries.length >= 2 && new Date(entries[1].date).toDateString() === yesterday) {
+    meta.streak = (meta.streak || 0) + 1;
+  } else {
+    meta.streak = 1;
+  }
+  if (meta.streak >= 7 && !meta.achievements.includes('semana_constante'))
+    meta.achievements.push('semana_constante');
+
+  saveUserMeta(user.id, meta);
+
+  // Show saved message
+  const savedMsg = document.getElementById('diary-saved-msg');
+  savedMsg.hidden = false;
+  setTimeout(() => { savedMsg.hidden = true; }, 3000);
+
+  // Reset form
+  document.getElementById('diary-text').value = '';
+  selectedMood = null;
+  MOODS.forEach(m => {
+    const btn = document.getElementById('mood-btn-' + m.key);
+    if (btn) btn.className = `flex flex-col items-center p-3 rounded-xl border-2 transition-all ${m.bg} ${m.border} hover:scale-105`;
+  });
+  document.getElementById('diary-tip').hidden = true;
+  updateDiarySaveBtn();
+}
+
+function deleteDiaryEntry(id) {
+  if (!confirm('¿Eliminar esta entrada?')) return;
+  const user    = getCurrentUser();
+  if (!user) return;
+  const entries = getDiaryEntries(user.id).filter(e => e.id !== id);
+  saveDiaryEntries(user.id, entries);
+  renderDiaryHistory();
+}
+
+function diarySetTab(tab) {
+  document.getElementById('diary-write').hidden   = (tab !== 'write');
+  document.getElementById('diary-history').hidden = (tab !== 'history');
+  document.getElementById('tab-write').className   = 'px-3 py-1 rounded-full text-sm font-bold transition-all ' +
+    (tab === 'write'   ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-gray-600');
+  document.getElementById('tab-history').className = 'px-3 py-1 rounded-full text-sm font-bold transition-all ' +
+    (tab === 'history' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-gray-600');
+
+  const user    = getCurrentUser();
+  const entries = user ? getDiaryEntries(user.id) : [];
+  document.getElementById('tab-history').textContent = 'Historial (' + entries.length + ')';
+
+  if (tab === 'history') renderDiaryHistory();
+}
+
+function renderDiaryHistory() {
+  const user    = getCurrentUser();
+  const entries = user ? getDiaryEntries(user.id) : [];
+  const list    = document.getElementById('diary-entries-list');
+
+  if (entries.length === 0) {
+    list.innerHTML = `<div class="text-center py-16">
+      <span class="text-6xl">📭</span>
+      <p class="text-gray-500 font-semibold mt-4">Todavía no tienes entradas</p>
+      <button onclick="diarySetTab('write')" class="mt-3 text-purple-600 font-black hover:underline">¡Escribe la primera!</button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = entries.map(e => {
+    const m    = MOODS.find(mo => mo.key === e.mood);
+    const date = new Date(e.date).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    return `<div class="rounded-2xl p-4 shadow-sm relative mb-3" style="background-color:${e.color||'#FDE68A'}">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-2xl">${m?.emoji||'😶'}</span>
+        <span class="font-black text-gray-700">${m?.label||e.mood}</span>
+        <span class="text-xs text-gray-500 ml-auto pr-6">${date}</span>
+      </div>
+      <p class="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed">${e.text}</p>
+      <button onclick="deleteDiaryEntry('${e.id}')" class="absolute top-3 right-3 text-gray-400 hover:text-red-400 text-xl font-bold leading-none">×</button>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+//  ACHIEVEMENTS
+// ============================================================
+
+function trackExplorador() {
+  const user = getCurrentUser();
+  if (!user || user.role !== 'alumno') return;
+  const meta = getUserMeta(user.id);
+  if (!meta.visitedAll) {
+    const entries  = getDiaryEntries(user.id);
+    const hasDiary = entries.length > 0;
+    // Mark explorador if they've been to dashboard (here) and have diary entries
+    // Simple heuristic: grant after first login back to dashboard
+    if (!meta.achievements) meta.achievements = [];
+    if (hasDiary && !meta.achievements.includes('explorador')) {
+      meta.achievements.push('explorador');
+      meta.visitedAll = true;
+      saveUserMeta(user.id, meta);
+    }
+  }
+}
+
+function renderAchievements() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const meta     = getUserMeta(user.id);
+  const unlocked = meta.achievements || [];
+
+  const unlockedList = ALL_ACHIEVEMENTS.filter(a => unlocked.includes(a.id));
+  const lockedList   = ALL_ACHIEVEMENTS.filter(a => !unlocked.includes(a.id));
+  const percent      = Math.round((unlockedList.length / ALL_ACHIEVEMENTS.length) * 100);
+
+  document.getElementById('ach-unlocked-count').textContent = unlockedList.length;
+  document.getElementById('ach-progress-bar').style.width   = percent + '%';
+  document.getElementById('ach-streak').textContent         = '🔥 ' + (meta.streak || 0);
+  document.getElementById('ach-empty').hidden               = unlockedList.length > 0 || lockedList.length > 0;
+
+  const unlockedSec = document.getElementById('ach-unlocked-section');
+  if (unlockedList.length > 0) {
+    unlockedSec.innerHTML = `<p class="font-black text-gray-600 mb-3">✅ Desbloqueados</p>
+      <div class="space-y-3 mb-6">
+        ${unlockedList.map(a => `
+          <div class="${a.bg} border-2 ${a.border} rounded-2xl p-4 flex items-center gap-4">
+            <span class="text-4xl">${a.icon}</span>
+            <div><p class="font-black text-gray-800">${a.label}</p><p class="text-xs text-gray-600">${a.desc}</p></div>
+          </div>`).join('')}
+      </div>`;
+  } else {
+    unlockedSec.innerHTML = '';
+  }
+
+  const lockedSec = document.getElementById('ach-locked-section');
+  if (lockedList.length > 0) {
+    lockedSec.innerHTML = `<p class="font-black text-gray-400 mb-3">🔒 Por descubrir</p>
+      <div class="space-y-3">
+        ${lockedList.map(a => `
+          <div class="bg-gray-100 border-2 border-gray-200 rounded-2xl p-4 flex items-center gap-4 opacity-60">
+            <span class="text-4xl grayscale">🔒</span>
+            <div><p class="font-black text-gray-500">${a.label}</p><p class="text-xs text-gray-400">${a.desc}</p></div>
+          </div>`).join('')}
+      </div>`;
+  } else {
+    lockedSec.innerHTML = '';
+  }
+}
+
+// ============================================================
+//  BREATHING GAME
+// ============================================================
+
+const BREATH_PHASES = [
+  { label: 'Inhala',  instruction: 'Respira profundo por la nariz', duration: 4, color: '#60A5FA', scale: 1.45 },
+  { label: 'Mantén',  instruction: 'Aguanta el aire suavemente',    duration: 7, color: '#A78BFA', scale: 1.45 },
+  { label: 'Exhala',  instruction: 'Suelta el aire por la boca',    duration: 8, color: '#34D399', scale: 0.85 },
+];
+
+let breathRunning  = false;
+let breathPhaseIdx = 0;
+let breathCount    = BREATH_PHASES[0].duration;
+let breathCycles   = 0;
+let breathInterval = null;
+
+function initBreathing() {
+  breathRunning  = false;
+  breathPhaseIdx = 0;
+  breathCount    = BREATH_PHASES[0].duration;
+  breathCycles   = 0;
+  document.getElementById('breath-start-btn').hidden = false;
+  document.getElementById('breath-stop-btn').hidden  = true;
+  updateBreathUI();
+}
+
+function startBreathing() {
+  breathRunning  = true;
+  breathPhaseIdx = 0;
+  breathCount    = BREATH_PHASES[0].duration;
+  document.getElementById('breath-start-btn').hidden = true;
+  document.getElementById('breath-stop-btn').hidden  = false;
+  updateBreathUI();
+
+  breathInterval = setInterval(() => {
+    breathCount--;
+    if (breathCount <= 0) {
+      breathPhaseIdx = (breathPhaseIdx + 1) % BREATH_PHASES.length;
+      if (breathPhaseIdx === 0) {
+        breathCycles++;
+        // Track zen achievement
+        const user = getCurrentUser();
+        if (user) {
+          const meta = getUserMeta(user.id);
+          meta.breathCount = (meta.breathCount || 0) + 1;
+          if (meta.breathCount >= 5 && !(meta.achievements||[]).includes('zen')) {
+            meta.achievements = meta.achievements || [];
+            meta.achievements.push('zen');
+          }
+          saveUserMeta(user.id, meta);
+        }
+      }
+      breathCount = BREATH_PHASES[breathPhaseIdx].duration;
+    }
+    updateBreathUI();
+  }, 1000);
+}
+
+function stopBreathing() {
+  if (breathInterval) { clearInterval(breathInterval); breathInterval = null; }
+  breathRunning  = false;
+  breathPhaseIdx = 0;
+  breathCount    = BREATH_PHASES[0].duration;
+  const startBtn = document.getElementById('breath-start-btn');
+  const stopBtn  = document.getElementById('breath-stop-btn');
+  if (startBtn) startBtn.hidden = false;
+  if (stopBtn)  stopBtn.hidden  = true;
+  updateBreathUI();
+}
+
+function updateBreathUI() {
+  const phase   = BREATH_PHASES[breathPhaseIdx];
+  const countEl = document.getElementById('breath-count');
+  const labelEl = document.getElementById('breath-label');
+  const instrEl = document.getElementById('breath-instruction');
+  const cyclesEl= document.getElementById('breath-cycles');
+  const circle  = document.getElementById('breath-circle');
+  const glow    = document.getElementById('breath-glow');
+  if (!countEl) return;
+
+  countEl.textContent  = breathCount;
+  labelEl.textContent  = phase.label;
+  instrEl.textContent  = phase.instruction;
+  cyclesEl.textContent = breathCycles + ' ciclos';
+
+  if (breathRunning) {
+    circle.style.transform       = 'scale(' + phase.scale + ')';
+    circle.style.borderColor     = phase.color;
+    circle.style.backgroundColor = phase.color + '20';
+    circle.style.boxShadow       = '0 0 40px ' + phase.color + '60';
+    glow.style.transform         = 'scale(' + (phase.scale * 1.15) + ')';
+    glow.style.backgroundColor   = phase.color + '15';
+    glow.style.boxShadow         = '0 0 80px ' + phase.color + '40';
+  } else {
+    circle.style.transform       = 'scale(1)';
+    circle.style.borderColor     = '#60A5FA';
+    circle.style.backgroundColor = '#60A5FA20';
+    circle.style.boxShadow       = '0 0 40px #60A5FA60';
+    glow.style.transform         = 'scale(1)';
+    glow.style.backgroundColor   = 'transparent';
+    glow.style.boxShadow         = 'none';
+  }
+}
+
+// ============================================================
+//  BUBBLE GAME
+// ============================================================
+
+const BUBBLE_COLORS = ['#93C5FD','#C4B5FD','#6EE7B7','#FCA5A5','#FDE68A','#F9A8D4','#A5F3FC'];
+const BUBBLE_EMOJIS = ['😊','⭐','🌈','💚','🫧','✨','🌸','💙','🌻','🦋'];
+
+let bubbles       = [];
+let bubbleScore   = 0;
+let bubbleAnimId  = null;
+let bubbleIdCtr   = 0;
+
+function makeBubble() {
+  return {
+    id:    ++bubbleIdCtr,
+    x:     10 + Math.random() * 80,
+    y:     10 + Math.random() * 80,
+    size:  52 + Math.random() * 58,
+    color: BUBBLE_COLORS[Math.floor(Math.random() * BUBBLE_COLORS.length)],
+    emoji: BUBBLE_EMOJIS[Math.floor(Math.random() * BUBBLE_EMOJIS.length)],
+    dx:    (Math.random() - 0.5) * 0.25,
+    dy:    (Math.random() - 0.5) * 0.25,
+    el:    null,
+  };
+}
+
+function createBubbleEl(b) {
+  const btn = document.createElement('button');
+  btn.style.cssText = `
+    position:absolute;left:${b.x}%;top:${b.y}%;
+    width:${b.size}px;height:${b.size}px;
+    background-color:${b.color}AA;border:3px solid ${b.color};
+    box-shadow:0 4px 20px ${b.color}66,inset 0 -4px 10px ${b.color}33;
+    transform:translate(-50%,-50%);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;touch-action:none;font-size:${b.size*0.38}px;
+    transition:transform 0.1s;`;
+  btn.textContent = b.emoji;
+  btn.addEventListener('pointerdown', e => { e.preventDefault(); popBubble(b); });
+  return btn;
+}
+
+function initBubbleGame() {
+  const area = document.getElementById('bubble-area');
+  // Clear previous bubbles but keep hint
+  [...area.children].forEach(c => { if (!c.classList.contains('pointer-events-none')) c.remove(); });
+
+  bubbles     = Array.from({ length: 9 }, makeBubble);
+  bubbleScore = 0;
+  updateBubbleScore();
+
+  bubbles.forEach(b => { b.el = createBubbleEl(b); area.appendChild(b.el); });
+
+  if (bubbleAnimId) cancelAnimationFrame(bubbleAnimId);
+  let last = performance.now();
+  function tick(now) {
+    const delta = Math.min((now - last) / 16, 3);
+    last = now;
+    bubbles.forEach(b => {
+      b.x += b.dx * delta;
+      b.y += b.dy * delta;
+      if (b.x < 3 || b.x > 94) { b.dx = -b.dx; b.x = Math.max(3, Math.min(94, b.x)); }
+      if (b.y < 3 || b.y > 88) { b.dy = -b.dy; b.y = Math.max(3, Math.min(88, b.y)); }
+      if (b.el) { b.el.style.left = b.x + '%'; b.el.style.top = b.y + '%'; }
+    });
+    bubbleAnimId = requestAnimationFrame(tick);
+  }
+  bubbleAnimId = requestAnimationFrame(tick);
+}
+
+function popBubble(b) {
+  if (b.el && b.el.parentNode) b.el.parentNode.removeChild(b.el);
+  bubbles = bubbles.filter(x => x.id !== b.id);
+  bubbleScore++;
+  updateBubbleScore();
+  showPopEffect(b.x, b.y);
+  setTimeout(() => {
+    const area = document.getElementById('bubble-area');
+    if (!area || !bubbleAnimId) return;
+    const nb = makeBubble();
+    nb.el = createBubbleEl(nb);
+    area.appendChild(nb.el);
+    bubbles.push(nb);
+  }, 1200);
+}
+
+function showPopEffect(x, y) {
+  const area = document.getElementById('bubble-area');
+  if (!area) return;
+  const div = document.createElement('div');
+  div.className = 'pop-effect';
+  div.style.cssText = `position:absolute;left:${x}%;top:${y}%;pointer-events:none;font-size:2rem;`;
+  div.textContent = '✨';
+  area.appendChild(div);
+  setTimeout(() => div.remove(), 500);
+}
+
+function stopBubbleGame() {
+  if (bubbleAnimId) { cancelAnimationFrame(bubbleAnimId); bubbleAnimId = null; }
+  bubbles = [];
+}
+
+function updateBubbleScore() {
+  const el = document.getElementById('bubble-score');
+  if (el) el.textContent = '✨ ' + bubbleScore;
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+
+(function init() {
+  // Ensure demo users exist in localStorage
+  if (!localStorage.getItem('mochila_users')) {
+    localStorage.setItem('mochila_users', JSON.stringify(DEMO_USERS));
+  }
+  const user = getCurrentUser();
+  if (user) {
+    afterLogin(user);
+  } else {
+    showView('login');
+  }
+})();
+</script>
+</body>
+</html>
