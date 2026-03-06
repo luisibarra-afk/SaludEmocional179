@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BreathingGame from '../components/BreathingGame';
 import BubbleGame from '../components/BubbleGame';
+import DoodleGame from '../components/DoodleGame';
+import CloudsGame from '../components/CloudsGame';
+import GroundingGame from '../components/GroundingGame';
 
 const games = [
   {
@@ -22,6 +25,33 @@ const games = [
     bg: 'bg-purple-50',
     border: 'border-purple-200',
   },
+  {
+    id: 'doodle',
+    label: 'Garabato Libre',
+    icon: '🎨',
+    desc: 'Dibuja lo que sientes. Sin reglas ni errores',
+    gradient: 'from-yellow-400 to-orange-400',
+    bg: 'bg-yellow-50',
+    border: 'border-yellow-200',
+  },
+  {
+    id: 'clouds',
+    label: 'Nubes que Pasan',
+    icon: '☁️',
+    desc: 'Toca las nubes y recibe mensajes de calma',
+    gradient: 'from-sky-400 to-blue-400',
+    bg: 'bg-sky-50',
+    border: 'border-sky-200',
+  },
+  {
+    id: 'grounding',
+    label: '5-4-3-2-1 Tierra',
+    icon: '🌍',
+    desc: 'Usa tus sentidos para volver al presente',
+    gradient: 'from-emerald-400 to-teal-400',
+    bg: 'bg-emerald-50',
+    border: 'border-emerald-200',
+  },
 ];
 
 export default function Games() {
@@ -30,6 +60,9 @@ export default function Games() {
 
   if (activeGame === 'breathing') return <BreathingGame onBack={() => setActiveGame(null)} />;
   if (activeGame === 'bubbles') return <BubbleGame onBack={() => setActiveGame(null)} />;
+  if (activeGame === 'doodle') return <DoodleGame onBack={() => setActiveGame(null)} />;
+  if (activeGame === 'clouds') return <CloudsGame onBack={() => setActiveGame(null)} />;
+  if (activeGame === 'grounding') return <GroundingGame onBack={() => setActiveGame(null)} />;
 
   return (
     <div className="min-h-screen bg-blue-50">
@@ -40,7 +73,7 @@ export default function Games() {
 
       <div className="max-w-md mx-auto p-6">
         <p className="text-gray-500 font-semibold text-center mb-6">
-          Estos juegos te ayudan a respirar y relajarte cuando te sientes agitado.
+          Elige una actividad para relajarte cuando te sientes agitado.
         </p>
 
         <div className="space-y-4">
