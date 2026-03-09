@@ -66,7 +66,10 @@
 <div id="view-dashboard" hidden class="min-h-screen bg-gradient-to-br from-green-50 via-amber-50 to-blue-50">
   <div class="flex items-center justify-between p-4 bg-white shadow-sm sticky top-0 z-10">
     <div class="flex items-center gap-3">
-      <span id="dash-avatar" class="text-3xl">🎒</span>
+      <button onclick="openAvatarPicker()" class="relative group flex-shrink-0" title="Cambiar avatar">
+        <img id="dash-avatar" src="" class="w-10 h-10 rounded-full border-2 border-green-200 bg-gray-100" alt="avatar">
+        <span class="absolute -bottom-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none group-hover:bg-green-600 transition-colors">✏️</span>
+      </button>
       <div>
         <p id="dash-name" class="font-black text-gray-800 leading-none"></p>
         <p id="dash-grade" class="text-xs text-gray-500"></p>
@@ -134,7 +137,7 @@
     <div id="teacher-students-list" class="grid gap-3 mb-6"></div>
     <div id="teacher-summary-panel" hidden class="bg-white rounded-2xl p-5 shadow-sm">
       <div class="flex items-center gap-3 mb-4">
-        <span id="summary-avatar" class="text-3xl">🎒</span>
+        <img id="summary-avatar" src="" class="w-10 h-10 rounded-full border-2 border-gray-200 bg-gray-100" alt="avatar">
         <div>
           <h3 id="summary-name" class="font-black text-gray-800 text-lg"></h3>
           <p class="text-sm text-gray-500">Historial emocional reciente</p>
@@ -381,6 +384,18 @@
   </div>
 </div>
 
+<!-- ===== AVATAR PICKER MODAL ===== -->
+<div id="avatar-modal" hidden class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-black text-gray-800">🎮 Elige tu personaje</h2>
+      <button onclick="closeAvatarPicker()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+    </div>
+    <div id="avatar-grid" class="grid grid-cols-4 gap-3 mb-5"></div>
+    <button onclick="saveAvatar()" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl transition-colors">Guardar</button>
+  </div>
+</div>
+
 <script>
 // ============================================================
 //  DATA & CONSTANTS
@@ -569,9 +584,56 @@ function showView(name) {
 //  DASHBOARD
 // ============================================================
 
+// ============================================================
+//  AVATAR (DiceBear pixel-art)
+// ============================================================
+
+const AVATAR_SEEDS = ['luna','felix','nova','storm','pixel','jade','blaze','zara','echo','rex','mia','kai','ash','ruby','axel','sky'];
+let _pickerSeed = null;
+
+function dicebearUrl(seed) {
+  return 'https://api.dicebear.com/9.x/pixel-art/svg?seed=' + encodeURIComponent(seed) + '&size=64';
+}
+
+function openAvatarPicker() {
+  const user = getCurrentUser();
+  _pickerSeed = user.avatarSeed || AVATAR_SEEDS[0];
+  const grid = document.getElementById('avatar-grid');
+  grid.innerHTML = '';
+  AVATAR_SEEDS.forEach(seed => {
+    const btn = document.createElement('button');
+    btn.className = 'rounded-xl border-2 p-1 transition-all ' + (seed === _pickerSeed ? 'border-green-500 bg-green-50 scale-110' : 'border-gray-200 hover:border-green-300');
+    btn.innerHTML = `<img src="${dicebearUrl(seed)}" class="w-12 h-12 rounded-lg" alt="${seed}">`;
+    btn.onclick = () => {
+      _pickerSeed = seed;
+      grid.querySelectorAll('button').forEach((b, i) => {
+        b.className = 'rounded-xl border-2 p-1 transition-all ' + (AVATAR_SEEDS[i] === seed ? 'border-green-500 bg-green-50 scale-110' : 'border-gray-200 hover:border-green-300');
+      });
+    };
+    grid.appendChild(btn);
+  });
+  document.getElementById('avatar-modal').hidden = false;
+}
+
+function closeAvatarPicker() {
+  document.getElementById('avatar-modal').hidden = true;
+}
+
+function saveAvatar() {
+  if (!_pickerSeed) return;
+  const users = getUsers();
+  const user = getCurrentUser();
+  const idx = users.findIndex(u => u.id === user.id);
+  users[idx].avatarSeed = _pickerSeed;
+  saveUsers(users);
+  document.getElementById('dash-avatar').src = dicebearUrl(_pickerSeed);
+  closeAvatarPicker();
+}
+
 function renderDashboard(user) {
   const meta = getUserMeta(user.id);
-  document.getElementById('dash-avatar').textContent = user.avatar || '🎒';
+  const seed = user.avatarSeed || AVATAR_SEEDS[0];
+  document.getElementById('dash-avatar').src = dicebearUrl(seed);
   document.getElementById('dash-name').textContent   = '¡Hola, ' + user.name.split(' ')[0] + '!';
   document.getElementById('dash-grade').textContent  = user.grade || '';
 
@@ -612,7 +674,7 @@ function renderTeacherView(user) {
     const btn     = document.createElement('button');
     btn.className = 'bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-all text-left border-2 border-transparent w-full';
     btn.innerHTML = `
-      <span class="text-3xl">${s.avatar || '🎒'}</span>
+      <img src="${dicebearUrl(s.avatarSeed || AVATAR_SEEDS[0])}" class="w-10 h-10 rounded-full border-2 border-gray-200 bg-gray-100" alt="avatar">
       <div class="flex-1">
         <p class="font-black text-gray-800">${s.name}</p>
         <p class="text-sm text-gray-500">${s.grade} &bull; 🔥 ${meta.streak} días &bull; ⭐ ${(meta.achievements||[]).length} logros</p>
@@ -632,7 +694,7 @@ function showStudentSummary(student, entries, activeBtn) {
   activeBtn.classList.remove('border-transparent');
   activeBtn.classList.add('border-green-400','bg-green-50');
 
-  document.getElementById('summary-avatar').textContent = student.avatar || '🎒';
+  document.getElementById('summary-avatar').src = dicebearUrl(student.avatarSeed || AVATAR_SEEDS[0]);
   document.getElementById('summary-name').textContent   = student.name;
 
   const panel = document.getElementById('teacher-summary-panel');
