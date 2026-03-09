@@ -58,6 +58,7 @@ export default function Login() {
           <span className="text-8xl inline-block float-animation">🎒</span>
           <h1 className="text-4xl font-black text-green-800 mt-3">Mi Mochila</h1>
           <p className="text-green-600 font-semibold mt-1">Tu espacio de bienestar</p>
+          <p className="text-green-700 font-bold mt-2 text-sm italic">Porque la DGETI se siente y se siente bien!</p>
         </div>
 
         {/* Card */}
@@ -120,6 +121,11 @@ export default function Login() {
           </div>
         </div>
       </div>
+
+      {/* Copyright */}
+      <p className="text-xs text-gray-400 text-center mt-6">
+        © Luis Eduardo Ibarra Hernández · CBTIS 179
+      </p>
     </div>
   );
 }
