@@ -84,40 +84,39 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header con árbol */}
-      <div className="bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 text-white px-5 pt-10 pb-20 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 text-white px-5 pt-8 pb-12 relative overflow-hidden">
         {/* Burbujas decorativas */}
         <div className="absolute top-4 right-4 w-24 h-24 bg-white/5 rounded-full" />
         <div className="absolute top-16 right-16 w-12 h-12 bg-white/5 rounded-full" />
 
-        <div className="flex justify-between items-start mb-5">
-          <div>
-            <p className="text-purple-200 text-sm">¡Hola de nuevo!</p>
-            <h2 className="text-xl font-bold">{estado.usuario?.nombre} 👋</h2>
+        {/* Header compacto */}
+        <div className="flex items-center justify-between gap-3">
+          {/* Árbol pequeño */}
+          <div className="w-14 h-14 flex-shrink-0">
+            <Arbol nivel={nivelIndex} />
           </div>
-          <button onClick={logout} className="text-purple-200 text-xs border border-purple-400 rounded-full px-3 py-1">
+
+          {/* Nombre + XP */}
+          <div className="flex-1 min-w-0">
+            <p className="text-purple-200 text-xs">¡Hola de nuevo!</p>
+            <h2 className="text-base font-bold leading-tight truncate">{estado.usuario?.nombre} 👋</h2>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-sm">{nivel.emoji}</span>
+              <div className="flex-1 bg-white/20 rounded-full h-2">
+                <div className="bg-yellow-400 h-2 rounded-full transition-all duration-700" style={{ width: `${progresoXP}%` }} />
+              </div>
+              <span className="text-purple-200 text-xs whitespace-nowrap">{estado.xp} XP</span>
+            </div>
+          </div>
+
+          {/* Salir */}
+          <button onClick={logout} className="text-purple-200 text-xs border border-purple-400 rounded-full px-3 py-1 flex-shrink-0">
             Salir
           </button>
         </div>
-
-        {/* Árbol + XP */}
-        <div className="flex items-end gap-4">
-          <div className="w-28 h-28 flex-shrink-0">
-            <Arbol nivel={nivelIndex} />
-          </div>
-          <div className="flex-1 pb-2">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-2xl">{nivel.emoji}</span>
-              <span className="font-bold text-lg">{nivel.nombre}</span>
-            </div>
-            <div className="bg-white/20 rounded-full h-3 mb-1">
-              <div className="bg-yellow-400 h-3 rounded-full transition-all duration-700" style={{ width: `${progresoXP}%` }} />
-            </div>
-            <p className="text-purple-200 text-xs">{estado.xp} XP · {Math.round(progresoXP)}% al siguiente nivel</p>
-          </div>
-        </div>
       </div>
 
-      <div className="px-5 -mt-10 space-y-4">
+      <div className="px-5 -mt-6 space-y-4">
 
         {/* Semana del semestre */}
         <div className="bg-white rounded-3xl shadow-lg p-4">
