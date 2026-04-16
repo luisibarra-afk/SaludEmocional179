@@ -257,9 +257,9 @@ export default function Docente() {
 
                         {submisionAbierta === i && (
                           <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
-                            {sub.tipo === 'foto' && sub.fotoBase64 && (
+                            {sub.tipo === 'foto' && (sub.fotoUrl || sub.fotoBase64) && (
                               <div className="space-y-2">
-                                <img src={sub.fotoBase64} alt="evidencia" className="w-full rounded-xl object-cover max-h-64" />
+                                <img src={sub.fotoUrl || sub.fotoBase64} alt="evidencia" className="w-full rounded-xl object-cover max-h-64" />
                                 {sub.comentario && (
                                   <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700 whitespace-pre-wrap">
                                     <span className="font-medium text-gray-500 text-xs block mb-1">💬 Comentario:</span>

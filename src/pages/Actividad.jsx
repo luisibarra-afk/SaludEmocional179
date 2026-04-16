@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import { supabase } from '../lib/supabase'
 import { AMBITOS } from '../data/actividades'
 import Memorama from '../components/juegos/Memorama'
 import TriviaVeloz from '../components/juegos/TriviaVeloz'
@@ -15,7 +16,9 @@ export default function Actividad() {
   const actividad = ambito?.actividades.find(a => a.id === actividadId)
   const [fase, setFase] = useState('intro') // intro | haciendo | done
   const [respuesta, setRespuesta] = useState('')
-  const [fotoUrl, setFotoUrl] = useState(null)
+  const [fotoUrl, setFotoUrl] = useState(null)   // preview base64
+  const [fotoFile, setFotoFile] = useState(null)  // archivo original para subir
+  const [subiendoFoto, setSubiendoFoto] = useState(false)
   const [opcionSeleccionada, setOpcionSeleccionada] = useState(null)
   const [timerActivo, setTimerActivo] = useState(false)
   const [segundosRestantes, setSegundosRestantes] = useState(0)
@@ -56,17 +59,30 @@ export default function Actividad() {
   const handleFoto = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
+    setFotoFile(file)
     const reader = new FileReader()
-    reader.onload = (ev) => setFotoUrl(ev.target.result) // base64 para que persista
+    reader.onload = (ev) => setFotoUrl(ev.target.result)
     reader.readAsDataURL(file)
   }
 
-  const handleCompletar = (resultadoJuego = null) => {
-    // Construir evidencia según el tipo
+  const handleCompletar = async (resultadoJuego = null) => {
     let evidencia = null
     const base = { titulo: actividad.titulo, ambitoNombre: ambito.nombre, ambitoEmoji: ambito.emoji }
+
     if (actividad.verificacion === 'foto' && fotoUrl) {
-      evidencia = { ...base, tipo: 'foto', fotoBase64: fotoUrl, comentario: respuesta || null }
+      let fotoFinal = fotoUrl // fallback a base64
+      if (fotoFile && estado.usuario?.no_control) {
+        setSubiendoFoto(true)
+        const ext = fotoFile.name.split('.').pop() || 'jpg'
+        const path = `${estado.usuario.no_control}/${actividadId}_${Date.now()}.${ext}`
+        const { data: up, error } = await supabase.storage.from('evidencias').upload(path, fotoFile, { contentType: fotoFile.type })
+        if (!error) {
+          const { data: { publicUrl } } = supabase.storage.from('evidencias').getPublicUrl(up.path)
+          fotoFinal = publicUrl
+        }
+        setSubiendoFoto(false)
+      }
+      evidencia = { ...base, tipo: 'foto', fotoUrl: fotoFinal, comentario: respuesta || null }
     } else if (actividad.verificacion === 'texto' && respuesta) {
       evidencia = { ...base, tipo: 'texto', texto: respuesta }
     } else if (actividad.verificacion === 'quiz' && opcionSeleccionada !== null) {
@@ -437,10 +453,10 @@ export default function Actividad() {
           {actividad.verificacion !== 'timer' && actividad.verificacion !== 'juego' && (
             <button
               onClick={handleCompletar}
-              disabled={!puedeCompletar()}
-              className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-all ${puedeCompletar() ? `${ambito.bg} active:scale-95` : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+              disabled={!puedeCompletar() || subiendoFoto}
+              className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-all ${puedeCompletar() && !subiendoFoto ? `${ambito.bg} active:scale-95` : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
             >
-              {puedeCompletar() ? '¡Completar actividad! ✓' : 'Completa la actividad primero'}
+              {subiendoFoto ? '📤 Subiendo foto...' : puedeCompletar() ? '¡Completar actividad! ✓' : 'Completa la actividad primero'}
             </button>
           )}
         </div>
