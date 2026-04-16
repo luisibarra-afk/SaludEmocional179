@@ -1,20 +1,26 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useApp, getSubmissions, getCheckins } from '../context/AppContext'
 import { AMBITOS, EMOCIONES } from '../data/actividades'
 
 export default function Docente() {
   const { estado, logout } = useApp()
-  const [tab, setTab] = useState('emocional') // emocional | evidencias | alumnos
+  const [tab, setTab] = useState('emocional')
   const [filtroAmbito, setFiltroAmbito] = useState('todos')
   const [submisionAbierta, setSubmisionAbierta] = useState(null)
-  const [submissions, setSubmissions] = useState(() => getSubmissions())
-  const [checkins, setCheckins] = useState(() => getCheckins())
+  const [submissions, setSubmissions] = useState([])
+  const [checkins, setCheckins] = useState([])
+  const [fetchando, setFetchando] = useState(true)
 
-  const refrescar = useCallback(() => {
-    setSubmissions(getSubmissions())
-    setCheckins(getCheckins())
+  const refrescar = useCallback(async () => {
+    setFetchando(true)
     setSubmisionAbierta(null)
+    const [subs, chks] = await Promise.all([getSubmissions(), getCheckins()])
+    setSubmissions(subs)
+    setCheckins(chks)
+    setFetchando(false)
   }, [])
+
+  useEffect(() => { refrescar() }, [])
 
   const filtradas = filtroAmbito === 'todos'
     ? submissions
@@ -50,8 +56,8 @@ export default function Docente() {
             <h2 className="text-xl font-bold">Bienvenido/a, {estado.usuario?.nombre} 👩‍🏫</h2>
           </div>
           <div className="flex gap-2">
-            <button onClick={refrescar} className="text-indigo-200 text-xs border border-indigo-400 rounded-full px-3 py-1">
-              🔄 Actualizar
+            <button onClick={refrescar} disabled={fetchando} className="text-indigo-200 text-xs border border-indigo-400 rounded-full px-3 py-1 disabled:opacity-50">
+              {fetchando ? '⏳' : '🔄'} Actualizar
             </button>
             <button onClick={logout} className="text-indigo-200 text-xs border border-indigo-400 rounded-full px-3 py-1">
               Salir

@@ -53,10 +53,7 @@ export default function Home() {
   const { estado, registrarCheckin, getNivel, getProgreso, logout } = useApp()
   const navigate = useNavigate()
 
-  // Check-in con sessionStorage para que persista al navegar pero no entre días
-  const [checkinLocal, setCheckinLocal] = useState(() => {
-    try { return JSON.parse(sessionStorage.getItem('checkin_' + HOY)) } catch { return null }
-  })
+  const checkinLocal = estado.checkinHoy?.emocion || null
 
   const semanaActual = getSemanaActual()
   const totalSemanas = 12
@@ -81,8 +78,6 @@ export default function Home() {
   const frase = FRASES_MOTIVACION[estado.xp % FRASES_MOTIVACION.length]
 
   const handleCheckin = (emocion) => {
-    sessionStorage.setItem('checkin_' + HOY, JSON.stringify(emocion))
-    setCheckinLocal(emocion)
     registrarCheckin(emocion)
   }
 
