@@ -86,8 +86,8 @@ export default function Home() {
       {/* Header con árbol */}
       <div className="bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 text-white px-5 pt-8 pb-12 relative overflow-hidden">
         {/* Burbujas decorativas */}
-        <div className="absolute top-4 right-4 w-24 h-24 bg-white/5 rounded-full" />
-        <div className="absolute top-16 right-16 w-12 h-12 bg-white/5 rounded-full" />
+        <div className="absolute top-4 right-4 w-24 h-24 bg-white/5 rounded-full pointer-events-none" />
+        <div className="absolute top-16 right-16 w-12 h-12 bg-white/5 rounded-full pointer-events-none" />
 
         {/* Header compacto */}
         <div className="flex items-center justify-between gap-3">
