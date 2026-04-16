@@ -113,7 +113,7 @@ export function AppProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem('mochila_sesion_activa')
-    window.location.replace(window.location.pathname)
+    window.location.href = window.location.origin + import.meta.env.BASE_URL
   }
 
   const registrarCheckin = async (emocion) => {
