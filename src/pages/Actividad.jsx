@@ -329,7 +329,7 @@ export default function Actividad() {
           {/* HONOR */}
           {actividad.verificacion === 'honor' && (
             <div className="bg-white rounded-2xl p-5 shadow-sm space-y-4">
-              <p className="text-gray-700 font-medium">Elige tu hábito de los 7 días:</p>
+              <p className="text-gray-700 font-medium">Elige tu hábito del día:</p>
               <div className="space-y-2">
                 {actividad.opciones_habito?.map((op, i) => (
                   <button
@@ -343,7 +343,7 @@ export default function Actividad() {
               </div>
               {habitoSeleccionado !== null && (
                 <div className="bg-green-50 rounded-xl p-3 text-sm text-green-700">
-                  ✅ Hábito seleccionado. Márcalo como completado cada día con honestidad.
+                  ✅ Hábito seleccionado. ¡Ponlo en práctica hoy!
                 </div>
               )}
             </div>

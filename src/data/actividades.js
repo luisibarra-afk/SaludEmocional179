@@ -174,9 +174,9 @@ export const AMBITOS = [
       },
       {
         id: 's3', semana: 3,
-        titulo: 'Reto 7 Días',
-        descripcion: 'Elige un hábito saludable: agua, sueño o desconexión digital. ¡7 días seguidos!',
-        tipo: 'streak', xp: 50, badge: '⚡ Súper Hábito', dificultad: 'Media', tiempo: 'Diario',
+        titulo: 'Reto del Día',
+        descripcion: 'Elige un hábito saludable y comprométete a practicarlo hoy: agua, sueño o desconexión digital.',
+        tipo: 'streak', xp: 50, badge: '⚡ Súper Hábito', dificultad: 'Media', tiempo: '5 min',
         opciones_habito: ['Tomar 8 vasos de agua', 'Dormir antes de las 11pm', 'Sin celular 1 hora al día', 'Comer fruta o verdura'],
         verificacion: 'honor',
       },
