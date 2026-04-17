@@ -3,7 +3,14 @@
 export const INICIO_SEMESTRE = new Date('2026-03-23T00:00:00')
 export const FIN_SEMESTRE    = new Date('2026-06-12T23:59:59')
 
-export const getSemanaActual = () => 12 // MODO PRUEBA — cambiar a cálculo real al publicar
+export const getSemanaActual = () => {
+  const ahora = new Date()
+  if (ahora < INICIO_SEMESTRE) return 1
+  if (ahora > FIN_SEMESTRE) return 12
+  const diffMs = ahora - INICIO_SEMESTRE
+  const semana = Math.floor(diffMs / (7 * 24 * 60 * 60 * 1000)) + 1
+  return Math.min(semana, 12)
+}
 
 export const AMBITOS = [
   {
@@ -426,10 +433,10 @@ export const AMBITOS = [
 ]
 
 export const NIVELES = [
-  { nombre: 'Semilla', emoji: '🌱', minXP: 0, maxXP: 100 },
-  { nombre: 'Brote', emoji: '🌿', minXP: 100, maxXP: 250 },
-  { nombre: 'Árbol', emoji: '🌳', minXP: 250, maxXP: 500 },
-  { nombre: 'Bosque', emoji: '🌲', minXP: 500, maxXP: 9999 },
+  { nombre: 'Semilla', emoji: '🌱', minXP: 0,    maxXP: 350  },  // Semanas 1-2
+  { nombre: 'Brote',   emoji: '🌿', minXP: 350,  maxXP: 700  },  // Semanas 3-4
+  { nombre: 'Árbol',   emoji: '🌳', minXP: 700,  maxXP: 1400 },  // Semanas 5-8
+  { nombre: 'Bosque',  emoji: '🌲', minXP: 1400, maxXP: 9999 },  // Semanas 9-12
 ]
 
 export const EMOCIONES = [

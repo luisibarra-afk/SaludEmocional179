@@ -42,9 +42,11 @@ function Arbol({ nivel }) {
     </g>,
   ]
   return (
-    <svg viewBox="0 0 120 100" className="w-full h-full" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}>
+    <svg viewBox="0 0 120 100" className="w-full h-full transition-all duration-700" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.15))' }}>
       <ellipse cx="60" cy="96" rx="30" ry="5" fill="#d1fae5" opacity="0.5"/>
-      {etapas[nivel]}
+      <g style={{ transformOrigin: 'center bottom', animation: 'treeGrow 0.8s ease-out' }}>
+        {etapas[nivel]}
+      </g>
     </svg>
   )
 }

@@ -91,13 +91,19 @@ export default function Progreso() {
 
         {/* Badges */}
         <div className="bg-white rounded-3xl shadow-sm p-5">
-          <h4 className="font-bold text-gray-700 mb-3">Mis Badges</h4>
+          <div className="flex justify-between items-center mb-3">
+            <h4 className="font-bold text-gray-700">Mis Badges</h4>
+            <span className="text-xs text-gray-400">{estado.badges.length} / {AMBITOS.flatMap(a => a.actividades).filter(a => a.badge).length}</span>
+          </div>
           {estado.badges.length === 0 ? (
             <p className="text-gray-400 text-sm text-center py-4">Completa actividades para ganar badges 🏅</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {estado.badges.map((b, i) => (
-                <span key={i} className="bg-purple-100 text-purple-700 px-3 py-2 rounded-xl text-sm font-medium">{b}</span>
+                <div key={i} className="bg-gradient-to-br from-purple-50 to-yellow-50 border border-purple-100 px-3 py-2 rounded-2xl text-center">
+                  <p className="text-xl">{b.split(' ')[0]}</p>
+                  <p className="text-xs text-purple-700 font-medium leading-tight mt-0.5">{b.split(' ').slice(1).join(' ')}</p>
+                </div>
               ))}
             </div>
           )}
