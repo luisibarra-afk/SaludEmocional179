@@ -1,6 +1,8 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, memo } from 'react'
 import { useApp, getSubmissions, getCheckins, getAllAlumnos, getEstadoAlumnos, getSubmissionDetail } from '../context/AppContext'
 import { AMBITOS, EMOCIONES, NIVELES } from '../data/actividades'
+
+const PAGE_SIZE = 50
 
 const TODAS_ACTIVIDADES = AMBITOS.flatMap(a =>
   (a.actividades || []).map(act => ({ ...act, ambitoId: a.id }))
@@ -17,7 +19,7 @@ function calcProgreso(xp) {
   return Math.min((xpEnNivel / xpNecesario) * 100, 100)
 }
 
-function ModalAlumno({ alumno, onClose, submissions, checkins, estadoAlumnos }) {
+const ModalAlumno = memo(function ModalAlumno({ alumno, onClose, submissions, checkins, estadoAlumnos }) {
   const estado = estadoAlumnos.find(e => e.no_control === alumno.no_control) || {}
   const completadas = estado.completadas || []
   const badges = estado.badges || []
@@ -271,7 +273,7 @@ function ModalAlumno({ alumno, onClose, submissions, checkins, estadoAlumnos }) 
       </div>
     </div>
   )
-}
+})
 
 export default function Docente() {
   const { estado, logout } = useApp()
@@ -284,25 +286,41 @@ export default function Docente() {
   const [estadoAlumnos, setEstadoAlumnos] = useState([])
   const [fetchando, setFetchando] = useState(true)
   const [fetchandoAlumnos, setFetchandoAlumnos] = useState(false)
+  const [cargandoMas, setCargandoMas] = useState(false)
+  const [hayMas, setHayMas] = useState(false)
   const [alumnoModal, setAlumnoModal] = useState(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
-  const detailCache = useRef({}) // id -> evidencia completa
+  const detailCache = useRef({})
 
   const refrescar = useCallback(async () => {
     setFetchando(true)
     setSubmisionAbierta(null)
-    // Fase 1: datos críticos (Evidencias + Emocional) — se muestran de inmediato
-    const [subs, chks] = await Promise.all([getSubmissions(), getCheckins()])
+    detailCache.current = {}
+    // Fase 1 — evidencias + checkins (aparecen de inmediato)
+    const [subs, chks] = await Promise.all([
+      getSubmissions({ limit: PAGE_SIZE, offset: 0 }),
+      getCheckins(),
+    ])
     setSubmissions(subs)
     setCheckins(chks)
+    setHayMas(subs.length === PAGE_SIZE)
     setFetchando(false)
-    // Fase 2: datos del tab Alumnos — carga en segundo plano sin bloquear la UI
+    // Fase 2 — alumnos en segundo plano (no bloquea la UI)
     setFetchandoAlumnos(true)
     const [alumnos, estados] = await Promise.all([getAllAlumnos(), getEstadoAlumnos()])
     setTodosAlumnos(alumnos)
     setEstadoAlumnos(estados)
     setFetchandoAlumnos(false)
   }, [])
+
+  const cargarMas = useCallback(async () => {
+    if (cargandoMas) return
+    setCargandoMas(true)
+    const mas = await getSubmissions({ limit: PAGE_SIZE, offset: submissions.length })
+    setSubmissions(prev => [...prev, ...mas])
+    setHayMas(mas.length === PAGE_SIZE)
+    setCargandoMas(false)
+  }, [cargandoMas, submissions.length])
 
   useEffect(() => { refrescar() }, [])
 
@@ -632,6 +650,17 @@ export default function Docente() {
                   )
                 })}
               </div>
+            )}
+
+            {/* Paginación */}
+            {hayMas && (
+              <button
+                onClick={cargarMas}
+                disabled={cargandoMas}
+                className="w-full py-3 rounded-2xl bg-white shadow-sm text-indigo-600 font-semibold text-sm border border-indigo-100 disabled:opacity-50 transition-all"
+              >
+                {cargandoMas ? '⏳ Cargando...' : '⬇️ Cargar más evidencias'}
+              </button>
             )}
           </>
         )}

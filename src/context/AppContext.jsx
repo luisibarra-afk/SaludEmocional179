@@ -15,31 +15,64 @@ const defaultEstado = {
 }
 
 const HOY_ISO = new Date().toISOString().split('T')[0]
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutos
 
+// ─── Caché de sesión ──────────────────────────────────────────────────────────
+function cacheGet(key) {
+  try {
+    const raw = sessionStorage.getItem(key)
+    if (!raw) return null
+    const { data, ts } = JSON.parse(raw)
+    if (Date.now() - ts > CACHE_TTL) { sessionStorage.removeItem(key); return null }
+    return data
+  } catch { return null }
+}
+function cacheSet(key, data) {
+  try { sessionStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })) } catch {}
+}
+function cacheDel(key) {
+  try { sessionStorage.removeItem(key) } catch {}
+}
+
+// ─── Estado del alumno (con caché de sesión) ─────────────────────────────────
 async function cargarEstadoSupabase(no_control) {
+  const key = `mochila_estado_${no_control}`
+  const cached = cacheGet(key)
+  if (cached) return cached
+
   const [estadoRes, checkinRes] = await Promise.all([
-    supabase.from('estado_alumno').select('*').eq('no_control', no_control).maybeSingle(),
-    supabase.from('checkins').select('*').eq('no_control', no_control).eq('fecha', HOY_ISO).maybeSingle(),
+    supabase.from('estado_alumno')
+      .select('xp, badges, completadas, racha, ultima_actividad')
+      .eq('no_control', no_control).maybeSingle(),
+    supabase.from('checkins')
+      .select('emocion')
+      .eq('no_control', no_control).eq('fecha', HOY_ISO).maybeSingle(),
   ])
-  return {
+
+  const result = {
     xp: estadoRes.data?.xp || 0,
     badges: estadoRes.data?.badges || [],
     completadas: estadoRes.data?.completadas || [],
     racha: estadoRes.data?.racha || 0,
     ultimaActividad: estadoRes.data?.ultima_actividad || null,
-    checkinHoy: checkinRes.data ? { emocion: checkinRes.data.emocion, fecha: new Date().toDateString() } : null,
+    checkinHoy: checkinRes.data
+      ? { emocion: checkinRes.data.emocion, fecha: new Date().toDateString() }
+      : null,
   }
+  cacheSet(key, result)
+  return result
 }
 
-// Carga solo los campos del listado — sin evidencia JSONB (puede contener fotos en base64)
-export async function getSubmissions() {
+// ─── Queries públicas ─────────────────────────────────────────────────────────
+
+// Lista ligera del docente — sin JSONB pesado, paginada
+export async function getSubmissions({ limit = 50, offset = 0 } = {}) {
   const { data } = await supabase
     .from('evidencias')
     .select(`
       id,
       no_control,
       nombre,
-      actividad_id,
       ambito_id,
       created_at,
       titulo:evidencia->>titulo,
@@ -49,12 +82,11 @@ export async function getSubmissions() {
       subtipo:evidencia->>subtipo
     `)
     .order('created_at', { ascending: false })
-    .limit(200)
+    .range(offset, offset + limit - 1)
   return (data || []).map(row => ({
     id: row.id,
     alumno: { nombre: row.nombre, matricula: row.no_control },
     ambitoId: row.ambito_id,
-    actividadId: row.actividad_id,
     fecha: new Date(row.created_at).toLocaleString('es-MX'),
     titulo: row.titulo,
     tipo: row.tipo,
@@ -64,7 +96,7 @@ export async function getSubmissions() {
   }))
 }
 
-// Carga el detalle completo de UNA evidencia (fotos, texto, etc.) solo al abrir
+// Detalle completo de una evidencia (fotos/texto) — solo al abrir
 export async function getSubmissionDetail(id) {
   const { data } = await supabase
     .from('evidencias')
@@ -74,12 +106,15 @@ export async function getSubmissionDetail(id) {
   return data?.evidencia || {}
 }
 
+// Checkins de los últimos 14 días únicamente
 export async function getCheckins() {
+  const hace14 = new Date()
+  hace14.setDate(hace14.getDate() - 14)
   const { data } = await supabase
     .from('checkins')
-    .select('*')
+    .select('no_control, nombre, emocion, fecha, fecha_hora')
+    .gte('fecha', hace14.toISOString().split('T')[0])
     .order('fecha_hora', { ascending: false })
-    .limit(500)
   return (data || []).map(row => ({
     matricula: row.no_control,
     nombre: row.nombre,
@@ -89,6 +124,7 @@ export async function getCheckins() {
   }))
 }
 
+// Solo los campos necesarios para la lista de alumnos
 export async function getAllAlumnos() {
   const { data } = await supabase
     .from('alumnos')
@@ -97,13 +133,15 @@ export async function getAllAlumnos() {
   return data || []
 }
 
+// Solo los campos que usa el panel — excluye updated_at innecesario
 export async function getEstadoAlumnos() {
   const { data } = await supabase
     .from('estado_alumno')
-    .select('*')
+    .select('no_control, xp, racha, badges, completadas')
   return data || []
 }
 
+// ─── Provider ─────────────────────────────────────────────────────────────────
 export function AppProvider({ children }) {
   const [estado, setEstado] = useState({ ...defaultEstado })
   const [cargando, setCargando] = useState(true)
@@ -140,7 +178,7 @@ export function AppProvider({ children }) {
 
     const { data, error } = await supabase
       .from('alumnos')
-      .select('*')
+      .select('no_control, nombre')       // solo lo que necesitamos
       .eq('pin', pin.padStart(4, '0'))
       .maybeSingle()
 
@@ -162,21 +200,23 @@ export function AppProvider({ children }) {
     const hoy = new Date().toDateString()
     setEstado(e => ({ ...e, checkinHoy: { emocion, fecha: hoy } }))
     const no_control = estado.usuario?.no_control
-    if (no_control) {
-      await supabase.from('checkins').upsert({
-        no_control,
-        nombre: estado.usuario.nombre,
-        emocion,
-        fecha: HOY_ISO,
-        fecha_hora: new Date().toISOString(),
-      }, { onConflict: 'no_control,fecha' })
-    }
+    if (!no_control) return
+    // Invalidar caché para que la próxima carga refleje el checkin
+    cacheDel(`mochila_estado_${no_control}`)
+    await supabase.from('checkins').upsert({
+      no_control,
+      nombre: estado.usuario.nombre,
+      emocion,
+      fecha: HOY_ISO,
+      fecha_hora: new Date().toISOString(),
+    }, { onConflict: 'no_control,fecha' })
   }
 
   const completarActividad = async (actividadId, ambitoId, xpGanado, badge, evidencia) => {
     if (estado.completadas.includes(actividadId)) return
     const nuevoXP = estado.xp + xpGanado
-    const nuevasBadges = badge && !estado.badges.includes(badge) ? [...estado.badges, badge] : estado.badges
+    const nuevasBadges = badge && !estado.badges.includes(badge)
+      ? [...estado.badges, badge] : estado.badges
     const nuevasCompletadas = [...estado.completadas, actividadId]
 
     setEstado(e => ({
@@ -188,28 +228,31 @@ export function AppProvider({ children }) {
     }))
 
     const no_control = estado.usuario?.no_control
-    if (no_control) {
-      const ops = [
-        supabase.from('estado_alumno').upsert({
-          no_control,
-          xp: nuevoXP,
-          badges: nuevasBadges,
-          completadas: nuevasCompletadas,
-          ultima_actividad: HOY_ISO,
-          updated_at: new Date().toISOString(),
-        }),
-      ]
-      if (evidencia) {
-        ops.push(supabase.from('evidencias').insert({
-          no_control,
-          nombre: estado.usuario.nombre,
-          actividad_id: actividadId,
-          ambito_id: ambitoId,
-          evidencia,
-        }))
-      }
-      await Promise.all(ops)
+    if (!no_control) return
+
+    // Invalidar caché de estado para reflejar el progreso actualizado
+    cacheDel(`mochila_estado_${no_control}`)
+
+    const ops = [
+      supabase.from('estado_alumno').upsert({
+        no_control,
+        xp: nuevoXP,
+        badges: nuevasBadges,
+        completadas: nuevasCompletadas,
+        ultima_actividad: HOY_ISO,
+        updated_at: new Date().toISOString(),
+      }),
+    ]
+    if (evidencia) {
+      ops.push(supabase.from('evidencias').insert({
+        no_control,
+        nombre: estado.usuario.nombre,
+        actividad_id: actividadId,
+        ambito_id: ambitoId,
+        evidencia,
+      }))
     }
+    await Promise.all(ops)
   }
 
   const getNivel = () => NIVELES.findLast(n => estado.xp >= n.minXP) || NIVELES[0]
