@@ -283,22 +283,23 @@ export default function Docente() {
   const [todosAlumnos, setTodosAlumnos] = useState([])
   const [estadoAlumnos, setEstadoAlumnos] = useState([])
   const [fetchando, setFetchando] = useState(true)
+  const [fetchandoAlumnos, setFetchandoAlumnos] = useState(false)
   const [alumnoModal, setAlumnoModal] = useState(null)
 
   const refrescar = useCallback(async () => {
     setFetchando(true)
     setSubmisionAbierta(null)
-    const [subs, chks, alumnos, estados] = await Promise.all([
-      getSubmissions(),
-      getCheckins(),
-      getAllAlumnos(),
-      getEstadoAlumnos(),
-    ])
+    // Fase 1: datos críticos (Evidencias + Emocional) — se muestran de inmediato
+    const [subs, chks] = await Promise.all([getSubmissions(), getCheckins()])
     setSubmissions(subs)
     setCheckins(chks)
+    setFetchando(false)
+    // Fase 2: datos del tab Alumnos — carga en segundo plano sin bloquear la UI
+    setFetchandoAlumnos(true)
+    const [alumnos, estados] = await Promise.all([getAllAlumnos(), getEstadoAlumnos()])
     setTodosAlumnos(alumnos)
     setEstadoAlumnos(estados)
-    setFetchando(false)
+    setFetchandoAlumnos(false)
   }, [])
 
   useEffect(() => { refrescar() }, [])
@@ -613,6 +614,12 @@ export default function Docente() {
         {/* TAB: ALUMNOS */}
         {tab === 'alumnos' && (
           <>
+            {fetchandoAlumnos && (
+              <div className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3">
+                <span className="text-xl animate-spin">⏳</span>
+                <p className="text-sm text-gray-500">Cargando lista de alumnos...</p>
+              </div>
+            )}
             {/* Resumen del grupo */}
             {listaAlumnos.length > 0 && (
               <div className="grid grid-cols-3 gap-3">
