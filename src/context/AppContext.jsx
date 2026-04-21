@@ -62,6 +62,21 @@ export async function getCheckins() {
   }))
 }
 
+export async function getAllAlumnos() {
+  const { data } = await supabase
+    .from('alumnos')
+    .select('no_control, nombre, grupo')
+    .order('nombre')
+  return data || []
+}
+
+export async function getEstadoAlumnos() {
+  const { data } = await supabase
+    .from('estado_alumno')
+    .select('*')
+  return data || []
+}
+
 export function AppProvider({ children }) {
   const [estado, setEstado] = useState({ ...defaultEstado })
   const [cargando, setCargando] = useState(true)

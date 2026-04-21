@@ -1,6 +1,277 @@
 import { useState, useCallback, useEffect } from 'react'
-import { useApp, getSubmissions, getCheckins } from '../context/AppContext'
-import { AMBITOS, EMOCIONES } from '../data/actividades'
+import { useApp, getSubmissions, getCheckins, getAllAlumnos, getEstadoAlumnos } from '../context/AppContext'
+import { AMBITOS, EMOCIONES, NIVELES } from '../data/actividades'
+
+const TODAS_ACTIVIDADES = AMBITOS.flatMap(a =>
+  (a.actividades || []).map(act => ({ ...act, ambitoId: a.id }))
+)
+
+function calcNivel(xp) {
+  return [...NIVELES].reverse().find(n => xp >= n.minXP) || NIVELES[0]
+}
+
+function calcProgreso(xp) {
+  const nivel = calcNivel(xp)
+  const xpEnNivel = xp - nivel.minXP
+  const xpNecesario = nivel.maxXP - nivel.minXP
+  return Math.min((xpEnNivel / xpNecesario) * 100, 100)
+}
+
+function ModalAlumno({ alumno, onClose, submissions, checkins, estadoAlumnos }) {
+  const estado = estadoAlumnos.find(e => e.no_control === alumno.no_control) || {}
+  const completadas = estado.completadas || []
+  const badges = estado.badges || []
+  const xp = estado.xp || 0
+  const racha = estado.racha || 0
+
+  const nivel = calcNivel(xp)
+  const progreso = calcProgreso(xp)
+
+  const evidenciasAlumno = submissions.filter(s => s.alumno?.matricula === alumno.no_control)
+  const ultimoCheckin = checkins.find(c => c.matricula === alumno.no_control)
+  const [evidenciaAbierta, setEvidenciaAbierta] = useState(null)
+
+  const pendientes = TODAS_ACTIVIDADES.filter(act => !completadas.includes(act.id))
+  const completadasList = TODAS_ACTIVIDADES.filter(act => completadas.includes(act.id))
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex flex-col justify-end" onClick={onClose}>
+      <div
+        className="bg-gray-50 rounded-t-3xl max-h-[92vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+        </div>
+
+        {/* Header del alumno */}
+        <div className="bg-gradient-to-br from-indigo-600 to-purple-600 mx-4 mt-2 mb-4 rounded-2xl p-4 text-white">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl">
+              {ultimoCheckin?.emocion?.emoji || '👤'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-base leading-tight truncate">{alumno.nombre}</p>
+              <p className="text-indigo-200 text-xs">
+                {alumno.no_control}{alumno.grupo ? ` · Grupo ${alumno.grupo}` : ''}
+              </p>
+            </div>
+            <button onClick={onClose} className="text-white/60 hover:text-white text-xl flex-shrink-0">✕</button>
+          </div>
+
+          {/* Nivel / XP */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl">{nivel.emoji}</span>
+            <div className="flex-1">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm font-semibold">{nivel.nombre}</span>
+                <span className="text-xs text-indigo-200">{xp} XP</span>
+              </div>
+              <div className="bg-white/20 rounded-full h-2">
+                <div className="h-2 bg-white rounded-full transition-all" style={{ width: `${progreso}%` }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-white/10 rounded-xl p-2 text-center">
+              <p className="text-lg font-bold">{completadas.length}</p>
+              <p className="text-xs text-indigo-200">completadas</p>
+            </div>
+            <div className="bg-white/10 rounded-xl p-2 text-center">
+              <p className="text-lg font-bold">{badges.length}</p>
+              <p className="text-xs text-indigo-200">badges</p>
+            </div>
+            <div className="bg-white/10 rounded-xl p-2 text-center">
+              <p className="text-lg font-bold">{racha}🔥</p>
+              <p className="text-xs text-indigo-200">racha días</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 space-y-4 pb-8">
+          {/* Badges / Logros */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <h4 className="font-bold text-gray-700 text-sm mb-3">🏅 Logros desbloqueados</h4>
+            {badges.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-2">Aún no ha ganado logros</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {badges.map((b, i) => (
+                  <span key={i} className="bg-amber-50 border border-amber-200 text-amber-800 text-xs px-2.5 py-1 rounded-full font-medium">
+                    {b}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Progreso por ámbito */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <h4 className="font-bold text-gray-700 text-sm mb-3">📚 Progreso por ámbito</h4>
+            <div className="space-y-3">
+              {AMBITOS.map(ambito => {
+                const actividadesAmbito = ambito.actividades || []
+                const completadasEnAmbito = actividadesAmbito.filter(act => completadas.includes(act.id))
+                const pct = actividadesAmbito.length > 0
+                  ? (completadasEnAmbito.length / actividadesAmbito.length) * 100
+                  : 0
+                return (
+                  <div key={ambito.id}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-base">{ambito.emoji}</span>
+                      <span className="text-xs font-medium text-gray-700 flex-1">{ambito.nombre}</span>
+                      <span className="text-xs font-bold text-gray-500">
+                        {completadasEnAmbito.length}/{actividadesAmbito.length}
+                      </span>
+                    </div>
+                    <div className="bg-gray-100 rounded-full h-2.5">
+                      <div
+                        className={`h-2.5 rounded-full ${ambito.bg || 'bg-indigo-500'} transition-all`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Actividades completadas */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <h4 className="font-bold text-gray-700 text-sm mb-3">
+              ✅ Completadas ({completadasList.length})
+            </h4>
+            {completadasList.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-2">Aún no ha completado actividades</p>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {completadasList.map(act => {
+                  const ambito = AMBITOS.find(a => a.id === act.ambitoId)
+                  return (
+                    <div key={act.id} className="flex items-center gap-2 py-2">
+                      <span className="text-base flex-shrink-0">{ambito?.emoji}</span>
+                      <span className="text-sm text-gray-700 flex-1">{act.titulo}</span>
+                      <span className="text-xs font-semibold text-green-600 flex-shrink-0">+{act.xp} XP</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Actividades pendientes */}
+          {pendientes.length > 0 && (
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <h4 className="font-bold text-gray-700 text-sm mb-3">
+                ⏳ Pendientes ({pendientes.length})
+              </h4>
+              <div className="divide-y divide-gray-50">
+                {pendientes.slice(0, 10).map(act => {
+                  const ambito = AMBITOS.find(a => a.id === act.ambitoId)
+                  return (
+                    <div key={act.id} className="flex items-center gap-2 py-2 opacity-60">
+                      <span className="text-base flex-shrink-0">{ambito?.emoji}</span>
+                      <span className="text-sm text-gray-500 flex-1">{act.titulo}</span>
+                      <span className="text-xs text-gray-400 flex-shrink-0">Sem {act.semana}</span>
+                    </div>
+                  )
+                })}
+                {pendientes.length > 10 && (
+                  <p className="text-xs text-gray-400 text-center pt-2">
+                    +{pendientes.length - 10} más pendientes
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Evidencias */}
+          {evidenciasAlumno.length > 0 && (
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <h4 className="font-bold text-gray-700 text-sm mb-3">
+                📎 Evidencias ({evidenciasAlumno.length})
+              </h4>
+              <div className="space-y-2">
+                {evidenciasAlumno.map((sub, i) => {
+                  const ambito = AMBITOS.find(a => a.id === sub.ambitoId)
+                  const abierta = evidenciaAbierta === i
+                  return (
+                    <div key={i} className="border border-gray-100 rounded-xl overflow-hidden">
+                      <button
+                        onClick={() => setEvidenciaAbierta(abierta ? null : i)}
+                        className="w-full flex items-center gap-2 p-3 text-left hover:bg-gray-50 transition-all"
+                      >
+                        <div className={`w-8 h-8 ${ambito?.bg || 'bg-gray-400'} rounded-lg flex items-center justify-center text-sm flex-shrink-0`}>
+                          {ambito?.emoji}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{sub.titulo}</p>
+                          <p className="text-xs text-gray-400">{sub.fecha}</p>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
+                          sub.tipo === 'foto' ? 'bg-blue-100 text-blue-700' :
+                          sub.tipo === 'texto' ? 'bg-green-100 text-green-700' :
+                          sub.tipo === 'quiz' ? 'bg-purple-100 text-purple-700' :
+                          sub.tipo === 'timer' ? 'bg-orange-100 text-orange-700' :
+                          sub.tipo === 'juego' ? 'bg-indigo-100 text-indigo-700' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          {sub.tipo === 'foto' ? '📷' : sub.tipo === 'texto' ? '✍️' :
+                           sub.tipo === 'quiz' ? '🧠' : sub.tipo === 'timer' ? '⏱️' :
+                           sub.tipo === 'juego' ? '🎮' : '✅'}
+                        </span>
+                        <span className="text-gray-400 text-xs">{abierta ? '▲' : '▼'}</span>
+                      </button>
+                      {abierta && (
+                        <div className="px-3 pb-3 pt-2 border-t border-gray-100 space-y-2">
+                          {sub.tipo === 'foto' && (sub.fotoUrl || sub.fotoBase64) && (
+                            <img src={sub.fotoUrl || sub.fotoBase64} alt="evidencia" className="w-full rounded-xl object-cover max-h-48" />
+                          )}
+                          {sub.tipo === 'foto' && sub.comentario && (
+                            <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-2">{sub.comentario}</p>
+                          )}
+                          {sub.tipo === 'texto' && sub.texto && (
+                            <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-2 whitespace-pre-wrap">{sub.texto}</p>
+                          )}
+                          {sub.tipo === 'quiz' && sub.respuesta && (
+                            <p className="text-sm text-purple-700 bg-purple-50 rounded-lg p-2">
+                              <strong>Respondió:</strong> {sub.respuesta}
+                            </p>
+                          )}
+                          {sub.tipo === 'honor' && sub.habito && (
+                            <p className="text-sm text-green-700 bg-green-50 rounded-lg p-2">
+                              <strong>Hábito elegido:</strong> {sub.habito}
+                            </p>
+                          )}
+                          {sub.tipo === 'swipe' && (
+                            <p className="text-sm text-orange-700 bg-orange-50 rounded-lg p-2">
+                              <strong>Aciertos:</strong> {sub.aciertos} de {sub.total}
+                            </p>
+                          )}
+                          {sub.tipo === 'juego' && sub.resultado && (
+                            <div className="text-sm text-indigo-700 bg-indigo-50 rounded-lg p-2 space-y-0.5">
+                              {sub.resultado.correctas !== undefined && <p>⭐ {sub.resultado.correctas}/{sub.resultado.total} correctas</p>}
+                              {sub.resultado.movimientos !== undefined && <p>🧩 {sub.resultado.movimientos} movimientos · {sub.resultado.pares} pares</p>}
+                              {sub.resultado.ganadas !== undefined && <p>🔤 {sub.resultado.ganadas}/{sub.resultado.total} palabras</p>}
+                              {sub.resultado.encontradas !== undefined && <p>🔍 {sub.resultado.encontradas}/{sub.resultado.total} palabras</p>}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function Docente() {
   const { estado, logout } = useApp()
@@ -9,14 +280,24 @@ export default function Docente() {
   const [submisionAbierta, setSubmisionAbierta] = useState(null)
   const [submissions, setSubmissions] = useState([])
   const [checkins, setCheckins] = useState([])
+  const [todosAlumnos, setTodosAlumnos] = useState([])
+  const [estadoAlumnos, setEstadoAlumnos] = useState([])
   const [fetchando, setFetchando] = useState(true)
+  const [alumnoModal, setAlumnoModal] = useState(null)
 
   const refrescar = useCallback(async () => {
     setFetchando(true)
     setSubmisionAbierta(null)
-    const [subs, chks] = await Promise.all([getSubmissions(), getCheckins()])
+    const [subs, chks, alumnos, estados] = await Promise.all([
+      getSubmissions(),
+      getCheckins(),
+      getAllAlumnos(),
+      getEstadoAlumnos(),
+    ])
     setSubmissions(subs)
     setCheckins(chks)
+    setTodosAlumnos(alumnos)
+    setEstadoAlumnos(estados)
     setFetchando(false)
   }, [])
 
@@ -33,21 +314,38 @@ export default function Docente() {
   const checkinsHoy = checkins.filter(c => c.fecha === HOY)
   const alumnosCheckinHoy = [...new Map(checkinsHoy.map(c => [c.matricula, c])).values()]
 
-  // Conteo por emoción (hoy)
   const conteoEmociones = EMOCIONES.map(em => ({
     ...em,
     count: checkinsHoy.filter(c => c.emocion?.label === em.label).length,
   }))
   const maxCount = Math.max(...conteoEmociones.map(e => e.count), 1)
 
-  // Alumnos únicos que alguna vez hicieron checkin
   const alumnosConCheckin = [...new Map(checkins.map(c => [c.matricula, { matricula: c.matricula, nombre: c.nombre }])).values()]
 
-  // Historial por alumno (últimos 7 días)
   const [alumnoExpandido, setAlumnoExpandido] = useState(null)
+
+  // Lista de alumnos para el tab — preferir todosAlumnos, fallback a los de evidencias
+  const listaAlumnos = todosAlumnos.length > 0
+    ? todosAlumnos
+    : alumnosUnicos.map(a => ({ no_control: a.matricula, nombre: a.nombre, grupo: '' }))
+
+  const alumnosActivos = listaAlumnos.filter(a =>
+    estadoAlumnos.find(e => e.no_control === a.no_control && (e.completadas?.length > 0 || e.xp > 0))
+  )
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
+      {/* Modal del alumno */}
+      {alumnoModal && (
+        <ModalAlumno
+          alumno={alumnoModal}
+          onClose={() => setAlumnoModal(null)}
+          submissions={submissions}
+          checkins={checkins}
+          estadoAlumnos={estadoAlumnos}
+        />
+      )}
+
       {/* Header */}
       <div className="bg-gradient-to-br from-indigo-700 to-purple-700 text-white px-5 pt-10 pb-6">
         <div className="flex justify-between items-start mb-4">
@@ -84,7 +382,6 @@ export default function Docente() {
         {/* TAB: EMOCIONAL */}
         {tab === 'emocional' && (
           <>
-            {/* Resumen hoy */}
             <div className="bg-white rounded-3xl shadow-sm p-5">
               <div className="flex justify-between items-center mb-4">
                 <div>
@@ -125,7 +422,6 @@ export default function Docente() {
               )}
             </div>
 
-            {/* Quién registró hoy */}
             {alumnosCheckinHoy.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm p-4">
                 <h4 className="font-bold text-gray-700 text-sm mb-3">✅ Registraron hoy</h4>
@@ -140,7 +436,6 @@ export default function Docente() {
               </div>
             )}
 
-            {/* Historial por alumno */}
             <div className="bg-white rounded-2xl shadow-sm p-4">
               <h4 className="font-bold text-gray-700 text-sm mb-3">📅 Historial por alumno</h4>
               {alumnosConCheckin.length === 0 ? (
@@ -163,7 +458,6 @@ export default function Docente() {
                             <p className="font-medium text-gray-800 text-sm">{alumno.nombre}</p>
                             <p className="text-xs text-gray-400">{historial.length} registros</p>
                           </div>
-                          {/* Últimas 7 emociones como burbujas */}
                           <div className="flex gap-0.5">
                             {historial.slice(0, 7).map((c, i) => (
                               <span key={i} className="text-sm">{c.emocion?.emoji}</span>
@@ -319,44 +613,77 @@ export default function Docente() {
         {/* TAB: ALUMNOS */}
         {tab === 'alumnos' && (
           <>
-            {alumnosUnicos.length === 0 ? (
+            {/* Resumen del grupo */}
+            {listaAlumnos.length > 0 && (
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-white rounded-2xl p-3 shadow-sm text-center">
+                  <p className="text-2xl font-bold text-indigo-600">{listaAlumnos.length}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">registrados</p>
+                </div>
+                <div className="bg-white rounded-2xl p-3 shadow-sm text-center">
+                  <p className="text-2xl font-bold text-green-600">{alumnosActivos.length}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">activos</p>
+                </div>
+                <div className="bg-white rounded-2xl p-3 shadow-sm text-center">
+                  <p className="text-2xl font-bold text-purple-600">{submissions.length}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">evidencias</p>
+                </div>
+              </div>
+            )}
+
+            {listaAlumnos.length === 0 ? (
               <div className="bg-white rounded-3xl p-8 text-center shadow-sm">
                 <span className="text-5xl">👥</span>
                 <p className="text-gray-500 mt-3 font-medium">Aún no hay alumnos registrados</p>
                 <p className="text-gray-400 text-sm">Aparecerán aquí cuando completen actividades.</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {alumnosUnicos.map((alumno, i) => {
-                  const actividadesAlumno = submissions.filter(s => s.alumno?.matricula === alumno.matricula)
-                  const ambitos = [...new Set(actividadesAlumno.map(s => s.ambitoId))]
-                  const ultimoCheckin = checkins.find(c => c.matricula === alumno.matricula)
+              <div className="space-y-2">
+                {listaAlumnos.map((alumno, i) => {
+                  const est = estadoAlumnos.find(e => e.no_control === alumno.no_control)
+                  const completadas = est?.completadas || []
+                  const badges = est?.badges || []
+                  const xp = est?.xp || 0
+                  const nivel = calcNivel(xp)
+                  const ultimoCheckin = checkins.find(c => c.matricula === alumno.no_control)
+                  const activo = completadas.length > 0 || xp > 0
+
                   return (
-                    <div key={i} className="bg-white rounded-2xl shadow-sm p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-xl">
-                          {ultimoCheckin?.emocion?.emoji || '👤'}
+                    <button
+                      key={i}
+                      onClick={() => setAlumnoModal(alumno)}
+                      className="w-full bg-white rounded-2xl shadow-sm p-4 text-left hover:shadow-md transition-all active:scale-[0.99]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 bg-indigo-50 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
+                          {ultimoCheckin?.emocion?.emoji || (activo ? nivel.emoji : '👤')}
                         </div>
-                        <div>
-                          <p className="font-semibold text-gray-800">{alumno.nombre}</p>
-                          <p className="text-xs text-gray-400">Matrícula: {alumno.matricula}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-800 text-sm truncate">{alumno.nombre}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {activo ? (
+                              <>
+                                <span className="text-xs text-indigo-600 font-medium">{nivel.emoji} {nivel.nombre}</span>
+                                <span className="text-xs text-gray-400">·</span>
+                                <span className="text-xs text-gray-500">{xp} XP</span>
+                              </>
+                            ) : (
+                              <span className="text-xs text-gray-400">Sin actividad aún</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="ml-auto text-right">
-                          <p className="font-bold text-indigo-600">{actividadesAlumno.length}</p>
-                          <p className="text-xs text-gray-400">actividades</p>
+                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-bold text-gray-700">{completadas.length}</span>
+                            <span className="text-xs text-gray-400">✅</span>
+                          </div>
+                          {badges.length > 0 && (
+                            <span className="text-xs text-amber-600 font-medium">{badges.length} 🏅</span>
+                          )}
                         </div>
+                        <span className="text-gray-300 text-sm ml-1">›</span>
                       </div>
-                      <div className="flex gap-1 flex-wrap">
-                        {ambitos.map(aid => {
-                          const amb = AMBITOS.find(a => a.id === aid)
-                          return amb ? (
-                            <span key={aid} className={`${amb.bg} text-white text-xs px-2 py-1 rounded-full`}>
-                              {amb.emoji} {amb.nombre.split(' ')[0]}
-                            </span>
-                          ) : null
-                        })}
-                      </div>
-                    </div>
+                    </button>
                   )
                 })}
               </div>
