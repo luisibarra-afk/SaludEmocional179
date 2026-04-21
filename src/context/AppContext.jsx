@@ -31,20 +31,47 @@ async function cargarEstadoSupabase(no_control) {
   }
 }
 
+// Carga solo los campos del listado — sin evidencia JSONB (puede contener fotos en base64)
 export async function getSubmissions() {
   const { data } = await supabase
     .from('evidencias')
-    .select('*')
+    .select(`
+      id,
+      no_control,
+      nombre,
+      actividad_id,
+      ambito_id,
+      created_at,
+      titulo:evidencia->>titulo,
+      tipo:evidencia->>tipo,
+      icono:evidencia->>icono,
+      ambitoEmoji:evidencia->>ambitoEmoji,
+      subtipo:evidencia->>subtipo
+    `)
     .order('created_at', { ascending: false })
-    .limit(300)
+    .limit(200)
   return (data || []).map(row => ({
     id: row.id,
     alumno: { nombre: row.nombre, matricula: row.no_control },
     ambitoId: row.ambito_id,
     actividadId: row.actividad_id,
     fecha: new Date(row.created_at).toLocaleString('es-MX'),
-    ...row.evidencia,
+    titulo: row.titulo,
+    tipo: row.tipo,
+    icono: row.icono,
+    ambitoEmoji: row.ambitoEmoji,
+    subtipo: row.subtipo,
   }))
+}
+
+// Carga el detalle completo de UNA evidencia (fotos, texto, etc.) solo al abrir
+export async function getSubmissionDetail(id) {
+  const { data } = await supabase
+    .from('evidencias')
+    .select('evidencia')
+    .eq('id', id)
+    .maybeSingle()
+  return data?.evidencia || {}
 }
 
 export async function getCheckins() {

@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react'
-import { useApp, getSubmissions, getCheckins, getAllAlumnos, getEstadoAlumnos } from '../context/AppContext'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { useApp, getSubmissions, getCheckins, getAllAlumnos, getEstadoAlumnos, getSubmissionDetail } from '../context/AppContext'
 import { AMBITOS, EMOCIONES, NIVELES } from '../data/actividades'
 
 const TODAS_ACTIVIDADES = AMBITOS.flatMap(a =>
@@ -285,6 +285,8 @@ export default function Docente() {
   const [fetchando, setFetchando] = useState(true)
   const [fetchandoAlumnos, setFetchandoAlumnos] = useState(false)
   const [alumnoModal, setAlumnoModal] = useState(null)
+  const [loadingDetail, setLoadingDetail] = useState(false)
+  const detailCache = useRef({}) // id -> evidencia completa
 
   const refrescar = useCallback(async () => {
     setFetchando(true)
@@ -517,10 +519,25 @@ export default function Docente() {
               <div className="space-y-3">
                 {filtradas.map((sub, i) => {
                   const ambito = AMBITOS.find(a => a.id === sub.ambitoId)
+                  const isOpen = submisionAbierta === i
+                  const detail = detailCache.current[sub.id]
+                  const isLoadingThis = loadingDetail && isOpen && !detail
+
+                  const handleOpen = async () => {
+                    if (isOpen) { setSubmisionAbierta(null); return }
+                    setSubmisionAbierta(i)
+                    if (!detailCache.current[sub.id]) {
+                      setLoadingDetail(true)
+                      const d = await getSubmissionDetail(sub.id)
+                      detailCache.current[sub.id] = d
+                      setLoadingDetail(false)
+                    }
+                  }
+
                   return (
                     <button
                       key={i}
-                      onClick={() => setSubmisionAbierta(submisionAbierta === i ? null : i)}
+                      onClick={handleOpen}
                       className="w-full bg-white rounded-2xl shadow-sm text-left overflow-hidden"
                     >
                       <div className="p-4">
@@ -550,56 +567,64 @@ export default function Docente() {
                           </span>
                         </div>
 
-                        {submisionAbierta === i && (
+                        {isOpen && (
                           <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
-                            {sub.tipo === 'foto' && (sub.fotoUrl || sub.fotoBase64) && (
-                              <div className="space-y-2">
-                                <img src={sub.fotoUrl || sub.fotoBase64} alt="evidencia" className="w-full rounded-xl object-cover max-h-64" />
-                                {sub.comentario && (
-                                  <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700 whitespace-pre-wrap">
-                                    <span className="font-medium text-gray-500 text-xs block mb-1">💬 Comentario:</span>
-                                    {sub.comentario}
+                            {isLoadingThis ? (
+                              <div className="flex items-center gap-2 py-2">
+                                <span className="animate-spin text-lg">⏳</span>
+                                <p className="text-gray-400 text-sm">Cargando evidencia...</p>
+                              </div>
+                            ) : detail ? (
+                              <>
+                                {detail.tipo === 'foto' && (detail.fotoUrl || detail.fotoBase64) && (
+                                  <div className="space-y-2">
+                                    <img src={detail.fotoUrl || detail.fotoBase64} alt="evidencia" className="w-full rounded-xl object-cover max-h-64" />
+                                    {detail.comentario && (
+                                      <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700 whitespace-pre-wrap">
+                                        <span className="font-medium text-gray-500 text-xs block mb-1">💬 Comentario:</span>
+                                        {detail.comentario}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
-                              </div>
-                            )}
-                            {sub.tipo === 'texto' && sub.texto && (
-                              <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700 whitespace-pre-wrap">{sub.texto}</div>
-                            )}
-                            {sub.tipo === 'quiz' && sub.respuesta && (
-                              <div className="bg-purple-50 rounded-xl p-3 text-sm text-purple-700">
-                                <span className="font-medium">Respondió:</span> {sub.respuesta}
-                              </div>
-                            )}
-                            {sub.tipo === 'honor' && sub.habito && (
-                              <div className="bg-green-50 rounded-xl p-3 text-sm text-green-700">
-                                <span className="font-medium">Hábito elegido:</span> {sub.habito}
-                              </div>
-                            )}
-                            {sub.tipo === 'swipe' && (
-                              <div className="bg-orange-50 rounded-xl p-3 text-sm text-orange-700">
-                                <span className="font-medium">Aciertos:</span> {sub.aciertos} de {sub.total}
-                              </div>
-                            )}
-                            {sub.tipo === 'timer' && (
-                              <div className="bg-orange-50 rounded-xl p-3 text-sm text-orange-700">
-                                ✅ Completó el reto cronometrado
-                              </div>
-                            )}
-                            {sub.tipo === 'juego' && (
-                              <div className="bg-indigo-50 rounded-xl p-3 text-sm text-indigo-700 space-y-1">
-                                <p className="font-medium">{sub.icono} {sub.subtipo === 'memorama' ? 'Memorama' : sub.subtipo === 'trivia_veloz' ? 'Trivia Veloz' : sub.subtipo === 'ahorcado' ? 'Ahorcado' : sub.subtipo === 'sopa' ? 'Sopa de Letras' : sub.subtipo}</p>
-                                {sub.resultado && (
-                                  <p>
-                                    {sub.resultado.correctas !== undefined && `⭐ ${sub.resultado.correctas}/${sub.resultado.total} correctas`}
-                                    {sub.resultado.movimientos !== undefined && `🧩 ${sub.resultado.movimientos} movimientos · ${sub.resultado.pares} pares`}
-                                    {sub.resultado.ganadas !== undefined && `🔤 ${sub.resultado.ganadas}/${sub.resultado.total} palabras`}
-                                    {sub.resultado.encontradas !== undefined && `🔍 ${sub.resultado.encontradas}/${sub.resultado.total} palabras`}
-                                  </p>
+                                {detail.tipo === 'texto' && detail.texto && (
+                                  <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700 whitespace-pre-wrap">{detail.texto}</div>
                                 )}
-                              </div>
-                            )}
-                            <p className="text-xs text-gray-400">Matrícula: {sub.alumno?.matricula}</p>
+                                {detail.tipo === 'quiz' && detail.respuesta && (
+                                  <div className="bg-purple-50 rounded-xl p-3 text-sm text-purple-700">
+                                    <span className="font-medium">Respondió:</span> {detail.respuesta}
+                                  </div>
+                                )}
+                                {detail.tipo === 'honor' && detail.habito && (
+                                  <div className="bg-green-50 rounded-xl p-3 text-sm text-green-700">
+                                    <span className="font-medium">Hábito elegido:</span> {detail.habito}
+                                  </div>
+                                )}
+                                {detail.tipo === 'swipe' && (
+                                  <div className="bg-orange-50 rounded-xl p-3 text-sm text-orange-700">
+                                    <span className="font-medium">Aciertos:</span> {detail.aciertos} de {detail.total}
+                                  </div>
+                                )}
+                                {detail.tipo === 'timer' && (
+                                  <div className="bg-orange-50 rounded-xl p-3 text-sm text-orange-700">
+                                    ✅ Completó el reto cronometrado
+                                  </div>
+                                )}
+                                {detail.tipo === 'juego' && (
+                                  <div className="bg-indigo-50 rounded-xl p-3 text-sm text-indigo-700 space-y-1">
+                                    <p className="font-medium">{detail.icono} {detail.subtipo === 'memorama' ? 'Memorama' : detail.subtipo === 'trivia_veloz' ? 'Trivia Veloz' : detail.subtipo === 'ahorcado' ? 'Ahorcado' : detail.subtipo === 'sopa' ? 'Sopa de Letras' : detail.subtipo}</p>
+                                    {detail.resultado && (
+                                      <p>
+                                        {detail.resultado.correctas !== undefined && `⭐ ${detail.resultado.correctas}/${detail.resultado.total} correctas`}
+                                        {detail.resultado.movimientos !== undefined && `🧩 ${detail.resultado.movimientos} movimientos`}
+                                        {detail.resultado.encontradas !== undefined && `🔍 ${detail.resultado.encontradas}/${detail.resultado.total} palabras`}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                                <p className="text-xs text-gray-400">Matrícula: {sub.alumno?.matricula}</p>
+                              </>
+                            ) : null}
                           </div>
                         )}
                       </div>
