@@ -2,6 +2,17 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { EMOCIONES, AMBITOS, FRASES_MOTIVACION, NIVELES, getSemanaActual, INICIO_SEMESTRE, FIN_SEMESTRE } from '../data/actividades'
+import BubblePop from '../components/juegos/BubblePop'
+import SnakeGame from '../components/juegos/SnakeGame'
+import Juego2048 from '../components/juegos/Juego2048'
+import FlappyBird from '../components/juegos/FlappyBird'
+
+const JUEGOS = [
+  { id: 'bubbles', emoji: '🫧', nombre: 'Bubble Pop', desc: 'Revienta todas las burbujas', grad: 'from-violet-500 to-purple-600' },
+  { id: 'snake',   emoji: '🐍', nombre: 'Snake',      desc: 'Come sin chocarte',          grad: 'from-emerald-500 to-green-600' },
+  { id: '2048',    emoji: '🔢', nombre: '2048',        desc: 'Combina hasta llegar a 2048', grad: 'from-amber-500 to-orange-500' },
+  { id: 'flappy',  emoji: '🐦', nombre: 'Flappy Bird', desc: 'Vuela entre los tubos',      grad: 'from-sky-500 to-blue-600'    },
+]
 
 const HOY = new Date().toDateString()
 
@@ -78,6 +89,7 @@ export default function Home() {
   ).length
 
   const frase = FRASES_MOTIVACION[estado.xp % FRASES_MOTIVACION.length]
+  const [juegoActivo, setJuegoActivo] = useState(null)
 
   const handleCheckin = (emocion) => {
     registrarCheckin(emocion)
@@ -197,44 +209,32 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Actividades de esta semana */}
+        {/* Zona de descanso — juegos */}
         <div>
           <div className="flex justify-between items-center mb-3">
-            <h3 className="font-bold text-gray-800">🎯 Esta semana</h3>
-            <span className="text-xs text-purple-600 font-medium bg-purple-50 px-2 py-1 rounded-full">Semana {semanaActual}</span>
+            <h3 className="font-bold text-gray-800">🎮 Zona de descanso</h3>
+            <span className="text-xs text-purple-600 font-medium bg-purple-50 px-2 py-1 rounded-full">Relájate</span>
           </div>
-
-          {actividadesSemana.length === 0 ? (
-            <div className="bg-white rounded-2xl p-5 text-center shadow-sm">
-              <span className="text-4xl">🎉</span>
-              <p className="text-gray-700 font-bold mt-2">¡Completaste todo esta semana!</p>
-              <p className="text-gray-400 text-sm">Vuelve la próxima semana para más actividades.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {actividadesSemana.map(act => (
-                <button
-                  key={act.id}
-                  onClick={() => navigate(`/actividad/${act.ambito.id}/${act.id}`)}
-                  className="w-full bg-white rounded-2xl p-4 shadow-sm text-left flex items-center gap-3 hover:shadow-md active:scale-98 transition-all"
-                >
-                  <div className={`w-12 h-12 ${act.ambito.bg} rounded-2xl flex items-center justify-center text-2xl flex-shrink-0`}>
-                    {act.ambito.emoji}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-800 text-sm">{act.titulo}</p>
-                    <p className="text-gray-400 text-xs truncate">{act.ambito.nombre}</p>
-                    <div className="flex gap-2 mt-1">
-                      <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">+{act.xp} XP</span>
-                      <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">⏱ {act.tiempo}</span>
-                    </div>
-                  </div>
-                  <span className="text-gray-300 text-xl">›</span>
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="grid grid-cols-2 gap-3">
+            {JUEGOS.map(j => (
+              <button
+                key={j.id}
+                onClick={() => setJuegoActivo(j.id)}
+                className={`bg-gradient-to-br ${j.grad} rounded-2xl p-4 text-left shadow-md active:scale-95 transition-all`}
+              >
+                <p className="text-3xl mb-2">{j.emoji}</p>
+                <p className="text-white font-bold text-sm">{j.nombre}</p>
+                <p className="text-white/70 text-xs mt-0.5">{j.desc}</p>
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* Juego activo */}
+        {juegoActivo === 'bubbles' && <BubblePop onClose={() => setJuegoActivo(null)} />}
+        {juegoActivo === 'snake'   && <SnakeGame  onClose={() => setJuegoActivo(null)} />}
+        {juegoActivo === '2048'    && <Juego2048  onClose={() => setJuegoActivo(null)} />}
+        {juegoActivo === 'flappy'  && <FlappyBird onClose={() => setJuegoActivo(null)} />}
 
         <button onClick={() => navigate('/ambitos')} className="w-full bg-purple-600 text-white py-4 rounded-2xl font-semibold shadow-lg active:scale-95 transition-all">
           Ver toda la mochila 🎒
